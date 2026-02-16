@@ -210,16 +210,19 @@
 
   dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.add('drag-over');
   });
 
   dropZone.addEventListener('dragleave', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.remove('drag-over');
   });
 
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.remove('drag-over');
     const allFiles = Array.from(e.dataTransfer.files);
     const supported = ['image/png', 'image/jpeg', 'image/webp'];
@@ -242,28 +245,30 @@
     if (files.length > 0) loadImages(files);
   });
 
-  // Also allow drop on the whole page when editor is visible
+  // Also allow drop on the whole page
   document.addEventListener('dragover', (e) => {
     e.preventDefault();
   });
 
   document.addEventListener('drop', (e) => {
     e.preventDefault();
-    if (!editor.classList.contains('hidden')) {
-      const allFiles = Array.from(e.dataTransfer.files);
-      const supported = ['image/png', 'image/jpeg', 'image/webp'];
-      const valid = allFiles.filter(f => supported.includes(f.type));
-      const invalid = allFiles.filter(f => !supported.includes(f.type));
-      if (invalid.length > 0 && valid.length === 0) {
-        showToast('지원되지 않는 형식입니다.\nPNG, JPG, WEBP 파일만 사용할 수 있습니다.');
-        return;
-      }
-      if (invalid.length > 0) {
-        showToast('일부 파일이 지원되지 않는 형식입니다.\n지원 형식: PNG, JPG, WEBP');
-      }
-      if (valid.length > 0) {
-        loadImages(valid);
-      }
+    // Allow drop anywhere, checks validity same as above
+    const allFiles = Array.from(e.dataTransfer.files);
+    // Ignore if not files (e.g. text selection drag)
+    if (allFiles.length === 0) return;
+
+    const supported = ['image/png', 'image/jpeg', 'image/webp'];
+    const valid = allFiles.filter(f => supported.includes(f.type));
+    const invalid = allFiles.filter(f => !supported.includes(f.type));
+    if (invalid.length > 0 && valid.length === 0) {
+      showToast('지원되지 않는 형식입니다.\nPNG, JPG, WEBP 파일만 사용할 수 있습니다.');
+      return;
+    }
+    if (invalid.length > 0) {
+      showToast('일부 파일이 지원되지 않는 형식입니다.\n지원 형식: PNG, JPG, WEBP');
+    }
+    if (valid.length > 0) {
+      loadImages(valid);
     }
   });
 
@@ -796,6 +801,7 @@
     showToast('이미지와 모든 효과가 초기화되었습니다.');
   });
 
+
   // Frame Texture Cache
   let frameTextures = {
     paper: null,
@@ -897,10 +903,9 @@
     
     thumbBaseHeight = Math.min(160, Math.max(40, thumbBaseHeight + deltaY));
     
-    // 모든 썸네일 크기 업데이트
-    document.querySelectorAll('.thumb-item').forEach(item => {
-      item.style.height = `${thumbBaseHeight}px`;
-    });
+    // CSS 변수 업데이트 (썸네일 및 추가 버튼 동적 크기 조절)
+    // .app 클래스나 :root에 변수가 선언되어 있으므로, document.documentElement에 설정
+    document.documentElement.style.setProperty('--thumb-height', `${thumbBaseHeight}px`);
   });
 
   document.addEventListener('mouseup', () => {
@@ -1117,7 +1122,6 @@
     };
     newImg.src = offCanvas.toDataURL();
   }
-
   // ===== Canvas Comparison & Note Interaction =====
   const startInteraction = (e) => {
     if (isCropping) return;

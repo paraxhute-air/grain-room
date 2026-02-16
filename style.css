@@ -29,6 +29,9 @@
   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Thumbnail Resizing */
+  --thumb-height: 80px;
 }
 
 body.light-mode {
@@ -1032,7 +1035,7 @@ body.light-mode .theme-toggle .sun { display: block; }
 
 .thumb-img-box {
   width: auto;
-  height: 80px;
+  height: var(--thumb-height);
   display: inline-block;
   border-radius: 0;
   overflow: hidden;
@@ -1191,8 +1194,8 @@ body.light-mode .theme-toggle .sun { display: block; }
 /* Ensure image add button stays square and centered */
 .thumb-item.thumb-add {
   aspect-ratio: 1;
-  width: 74px;
-  height: 74px; /* Explicitly set height to ensure centering works well */
+  width: calc(var(--thumb-height) - 6px);
+  height: calc(var(--thumb-height) - 6px); /* Dynamic height based on thumb height */
   background: rgba(128, 128, 128, 0.08);
   border: 1px dashed rgba(128, 128, 128, 0.3);
   display: flex !important;
@@ -1224,6 +1227,7 @@ body.light-mode .theme-toggle .sun { display: block; }
 @media (max-width: 768px) {
   .app {
     height: 100dvh; /* Dynamic viewport height */
+    --thumb-height: 60px; /* Default mobile thumb height */
   }
 
   /* Header adjustments */
@@ -1312,7 +1316,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   }
   
   .thumb-img-box {
-    height: 60px;
+    height: var(--thumb-height);
   }
   
   .image-gallery {
@@ -1321,8 +1325,8 @@ body.light-mode .theme-toggle .sun { display: block; }
   }
 
   .thumb-item.thumb-add {
-    width: 56px;
-    height: 56px;
+    width: calc(var(--thumb-height) - 4px);
+    height: calc(var(--thumb-height) - 4px);
     margin-top: 2px;
   }
 
