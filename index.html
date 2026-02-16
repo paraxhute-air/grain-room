@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grain Room. — 이미지 그레인 & 필터 툴</title>
+  <meta name="description" content="드래그앤드롭으로 이미지에 필름 그레인 효과와 다양한 필터를 적용하세요.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo logo-box">
+          <span>Grain Room<span class="logo-dot">.</span></span>
+        </div>
+        <div class="header-right">
+          <p class="tagline">간편하게 필름 감성을 더하세요</p>
+          <button id="btnThemeToggle" class="btn-icon theme-toggle" title="테마 변경">
+            <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Drop Zone (shown when no image) -->
+    <div id="dropZone" class="drop-zone">
+      <div class="drop-zone-content">
+        <div class="drop-icon">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <rect x="6" y="16" width="44" height="30" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+            <circle cx="28" cy="31" r="9" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+            <circle cx="28" cy="31" r="4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+            <rect x="18" y="12" width="20" height="6" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+            <circle cx="42" cy="22" r="2" fill="currentColor" opacity="0.3"/>
+          </svg>
+        </div>
+        <h2>이미지를 드롭하세요</h2>
+        <p>또는 클릭하여 파일 선택</p>
+        <p class="formats">PNG, JPG, WEBP</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+    </div>
+
+    <!-- Editor (shown when image loaded) -->
+    <div id="editor" class="editor hidden">
+      <div class="editor-layout">
+        <!-- Canvas Area -->
+        <div class="canvas-area">
+          <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="canvas"></canvas>
+            <div id="cropOverlay" class="crop-overlay hidden">
+              <div class="crop-rect"></div>
+              <div class="crop-actions">
+                <button id="btnCropCancel" class="btn btn-ghost btn-sm">취소</button>
+                <button id="btnCropApply" class="btn btn-primary btn-sm">적용</button>
+              </div>
+            </div>
+          </div>
+          <div class="canvas-actions">
+            <button id="btnCrop" class="btn btn-ghost" title="이미지 자르기">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></svg>
+              자르기
+            </button>
+            <div id="cropRatios" class="btn-group hidden">
+              <button class="btn-option active" data-ratio="free">자유형</button>
+              <button class="btn-option" data-ratio="1:1">1:1</button>
+              <button class="btn-option" data-ratio="16:9">16:9</button>
+              <button class="btn-option" data-ratio="circle">원형</button>
+            </div>
+            <button id="btnUndo" class="btn btn-ghost" title="실행 취소 (Ctrl+Z)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+              실행 취소
+            </button>
+            <button id="btnRedo" class="btn btn-ghost" title="다시 실행 (Ctrl+Shift+Z 또는 Ctrl+Y)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+              다시 실행
+            </button>
+            <button id="btnReset" class="btn btn-ghost" title="이미지 초기화">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              초기화
+            </button>
+            <button id="btnRotate" class="btn btn-ghost" title="90도 반시계 회전">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              회전
+            </button>
+            <div class="btn-group zoom-controls">
+              <button id="btnZoomOut" class="btn-option" title="축소">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <button id="btnZoomReset" class="btn-option" title="100%">100%</button>
+              <button id="btnZoomIn" class="btn-option" title="확대">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+            <button id="btnApplyAll" class="btn btn-ghost" title="현재 세팅 모든 이미지에 적용">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10H7z"/><path d="M16 16h6v6h-6z"/><path d="M2 2h6v6H2z"/></svg>
+              일괄 적용
+            </button>
+            <button id="btnNewImage" class="btn btn-ghost" title="새 이미지 추가">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              새 이미지
+            </button>
+            <button id="btnDownloadOpen" class="btn btn-primary" title="다운로드">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              다운로드
+            </button>
+          </div>
+          <div id="galleryResizer" class="resizer" title="드래그하여 갤러리 크기 조절"></div>
+          <!-- Image Gallery / Filmstrip -->
+          <div id="imageGallery" class="image-gallery hidden">
+            <!-- Thumbnails will be injected here -->
+          </div>
+        </div>
+
+    <!-- Download Modal -->
+    <div id="downloadModal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>이미지 다운로드</h3>
+          <button id="modalClose" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="control-group">
+            <label class="label-text">파일 형식</label>
+            <div class="btn-group" id="formatSelect">
+              <button class="btn-option" data-value="png">PNG</button>
+              <button class="btn-option active" data-value="jpeg">JPG</button>
+            </div>
+          </div>
+          <div class="control-group" id="qualityGroup">
+            <label>
+              <span class="label-text">품질</span>
+              <span class="label-value" id="qualityVal">85</span>
+            </label>
+            <input type="range" id="downloadQuality" min="10" max="100" value="85" step="5" class="slider">
+            <div class="quality-hints">
+              <span>낮음 (작은 파일)</span>
+              <span>높음 (큰 파일)</span>
+            </div>
+          </div>
+          <div class="download-info" id="downloadInfo">
+            <span id="downloadResolution"></span>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; flex-direction: column; gap: 8px;">
+          <button id="btnDownloadConfirm" class="btn btn-primary btn-full">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            현재 이미지 다운로드
+          </button>
+          <button id="btnDownloadAll" class="btn btn-ghost btn-full" style="border: 1px solid var(--border);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"/><path d="M12 15V3"/><path d="M4 20h16"/></svg>
+            모든 이미지 다운로드 (.zip 권장)
+          </button>
+        </div>
+      </div>
+    </div>
+
+        <!-- 우측 사이드바 -->
+        <div class="controls-sidebar">
+          <div class="controls-panel">
+          <!-- Grain Section -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="5" r="1.5"/><circle cx="12" cy="7" r="1"/><circle cx="19" cy="5" r="1.5"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1.5"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="17" r="1.5"/><circle cx="19" cy="19" r="1"/></svg>
+                그레인
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="control-group">
+              <label>
+                <span class="label-text">강도</span>
+                <span class="label-value" id="grainIntensityVal">40</span>
+              </label>
+              <input type="range" id="grainIntensity" min="0" max="100" value="40" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">크기</span>
+                <span class="label-value" id="grainSizeVal">1</span>
+              </label>
+              <input type="range" id="grainSize" min="1" max="5" value="1" step="1" class="slider">
+            </div>
+            <div class="control-group">
+              <label class="label-text">블렌드 모드</label>
+              <div class="btn-group" id="blendMode">
+                <button class="btn-option active" data-value="overlay">오버레이</button>
+                <button class="btn-option" data-value="multiply">멀티플라이</button>
+                <button class="btn-option" data-value="screen">스크린</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                조정
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="control-group">
+              <label>
+                <span class="label-text">밝기</span>
+                <span class="label-value" id="brightnessVal">0</span>
+              </label>
+              <input type="range" id="brightness" min="-100" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">대비</span>
+                <span class="label-value" id="contrastVal">0</span>
+              </label>
+              <input type="range" id="contrast" min="-100" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">채도</span>
+                <span class="label-value" id="saturationVal">0</span>
+              </label>
+              <input type="range" id="saturation" min="-100" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">색온도</span>
+                <span class="label-value" id="temperatureVal">0</span>
+              </label>
+              <input type="range" id="temperature" min="-100" max="100" value="0" class="slider">
+            </div>
+          </div>
+
+          <!-- CMYK Section -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20L12 2z"/></svg>
+                CMYK
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="control-group">
+              <label>
+                <span class="label-text">Cyan (청록)</span>
+                <span class="label-value" id="cyanVal">0</span>
+              </label>
+              <input type="range" id="cyan" min="-100" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">Magenta (자홍)</span>
+                <span class="label-value" id="magentaVal">0</span>
+              </label>
+              <input type="range" id="magenta" min="-100" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">Yellow (노랑)</span>
+                <span class="label-value" id="yellowVal">0</span>
+              </label>
+              <input type="range" id="yellow" min="-100" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">Key (검정)</span>
+                <span class="label-value" id="keyVal">0</span>
+              </label>
+              <input type="range" id="key" min="-100" max="100" value="0" class="slider">
+            </div>
+          </div>
+
+          <!-- Effects Section -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
+                효과
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="control-group">
+              <label>
+                <span class="label-text">세피아</span>
+                <span class="label-value" id="sepiaVal">0</span>
+              </label>
+              <input type="range" id="sepia" min="0" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">비네트</span>
+                <span class="label-value" id="vignetteVal">0</span>
+              </label>
+              <input type="range" id="vignette" min="0" max="100" value="0" class="slider">
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">페이드</span>
+                <span class="label-value" id="fadeVal">0</span>
+              </label>
+              <input type="range" id="fade" min="0" max="100" value="0" class="slider">
+            </div>
+          </div>
+
+          <!-- Frame Section -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                프레임
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="control-group">
+              <div class="toggle-row" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span class="label-text">프레임 적용</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="frameEnable">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <label>
+                <span class="label-text">프레임 종류</span>
+              </label>
+              <div class="btn-group" id="frameStyle">
+                <button class="btn-option active" data-value="none">없음</button>
+                <button class="btn-option" data-value="white">화이트</button>
+                <button class="btn-option" data-value="black">블랙</button>
+                <button class="btn-option" data-value="paper">구겨진 종이</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <label>
+                <span class="label-text">마진 크기</span>
+              </label>
+              <div class="btn-group" id="frameMargin">
+                <button class="btn-option active" data-margin="small">Small</button>
+                <button class="btn-option" data-margin="medium">Medium</button>
+                <button class="btn-option" data-margin="large">Large</button>
+              </div>
+            </div>
+          </div>
+          <!-- Text Overlay -->
+          <!-- Date Stamp Section -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                날짜스탬프
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="control-group">
+              <div class="toggle-row" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span class="label-text">날짜스탬프 표시</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="dateEnable">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="input-with-clear">
+                <input type="text" id="textDate" class="text-input" placeholder="2025.01.01" maxlength="20">
+                <button id="btnClearDate" class="btn-clear" title="날짜 지우기">&times;</button>
+              </div>
+              <label><span>위치</span></label>
+              <div class="btn-group" id="datePosition">
+                <button class="btn-option active" data-pos="top-left">좌상</button>
+                <button class="btn-option" data-pos="top-right">우상</button>
+                <button class="btn-option" data-pos="bottom-left">좌하</button>
+                <button class="btn-option active" data-pos="bottom-right">우하</button>
+              </div>
+              
+              <label><span>방향</span></label>
+              <div class="btn-group" id="dateDirection">
+                <button class="btn-option active" data-dir="horizontal">가로</button>
+                <button class="btn-option" data-dir="vertical">세로</button>
+              </div>
+              
+              <label><span>날짜 색상</span></label>
+              <div class="btn-group" id="textDateColor">
+                <button class="btn-option active" data-color="#ffffff">화이트</button>
+                <button class="btn-option" data-color="#eab308">옐로우</button>
+                <button class="btn-option" data-color="#ea580c">오렌지</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Section -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                노트
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="control-group">
+              <div class="input-with-clear">
+                <input type="text" id="textNote" class="text-input" placeholder="메모를 입력하세요 (최대 20자)" maxlength="20">
+                <button id="btnClearNote" class="btn-clear" title="노트 지우기">&times;</button>
+              </div>
+              
+              <label><span>위치</span></label>
+              <div class="btn-group" id="notePosition">
+                <button class="btn-option active" data-pos="top-left">좌상</button>
+                <button class="btn-option" data-pos="top-right">우상</button>
+                <button class="btn-option active" data-pos="bottom-left">좌하</button>
+                <button class="btn-option" data-pos="bottom-right">우하</button>
+              </div>
+              
+              <label><span>방향</span></label>
+              <div class="btn-group" id="noteDirection">
+                <button class="btn-option active" data-dir="horizontal">가로</button>
+                <button class="btn-option" data-dir="vertical">세로</button>
+              </div>
+
+              <label><span>노트 스타일</span></label>
+              <div class="btn-group" id="textNoteStyle">
+                <button class="btn-option active" data-style="white">화이트</button>
+                <button class="btn-option" data-style="black">블랙</button>
+                <button class="btn-option" data-style="label">라벨</button>
+              </div>
+              
+              <label><span>노트 폰트</span></label>
+              <div class="btn-group" id="textNoteFont">
+                <button class="btn-option active" data-font="Nanum Pen Script">A</button>
+                <button class="btn-option" data-font="Nanum Myeongjo">B</button>
+                <button class="btn-option" data-font="Noto Sans KR">C</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="control-section">
+            <h3 class="section-title">
+              <span class="title-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                프리셋
+              </span>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </h3>
+            <div class="presets-grid" id="presets">
+              <button class="preset-btn" data-preset="film35mm">
+                <span class="preset-preview film35mm"></span>
+                <span>35mm 필름</span>
+              </button>
+              <button class="preset-btn" data-preset="vintage">
+                <span class="preset-preview vintage"></span>
+                <span>빈티지</span>
+              </button>
+              <button class="preset-btn" data-preset="noir">
+                <span class="preset-preview noir"></span>
+                <span>느와르</span>
+              </button>
+              <button class="preset-btn" data-preset="faded">
+                <span class="preset-preview faded"></span>
+                <span>페이디드</span>
+              </button>
+              <button class="preset-btn" data-preset="cinematic">
+                <span class="preset-preview cinematic"></span>
+                <span>시네마틱</span>
+              </button>
+              <button class="preset-btn" data-preset="lofi">
+                <span class="preset-preview lofi"></span>
+                <span>로파이</span>
+              </button>
+              <button class="preset-btn" data-preset="forest">
+                <span class="preset-preview forest"></span>
+                <span>포레스트</span>
+              </button>
+              <button class="preset-btn" data-preset="tokyo">
+                <span class="preset-preview tokyo"></span>
+                <span>도쿄타워</span>
+              </button>
+              <button class="preset-btn" data-preset="california">
+                <span class="preset-preview california"></span>
+                <span>캘리포니아</span>
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <div id="toast" class="toast hidden"></div>
+  <!-- Font Preloader (ensures fonts are ready for canvas) -->
+  <div style="visibility: hidden; position: absolute; top: -9999px; left: -9999px; height: 1px; width: 1px; overflow: hidden;">
+    <span style="font-family: 'Digital-7 Mono'">_</span>
+    <span style="font-family: 'Nanum Pen Script'">_</span>
+    <span style="font-family: 'Nanum Myeongjo'">_</span>
+    <span style="font-family: 'Noto Sans KR'">_</span>
+  </div>
+</body>
+</html>
