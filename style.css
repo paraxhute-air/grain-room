@@ -664,18 +664,20 @@ body.light-mode .theme-toggle .sun { display: block; }
   border-radius: 50%;
 }
 
+
+
 .toggle-switch input:checked + .toggle-slider {
-  background-color: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
+  background-color: rgba(220, 38, 38, 0.2);
+  border-color: #dc2626;
 }
 
 .toggle-switch input:focus + .toggle-slider {
-  box-shadow: 0 0 1px #ef4444;
+  box-shadow: 0 0 1px #dc2626;
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
   transform: translateX(14px);
-  background-color: #ef4444;
+  background-color: #dc2626;
 }
 
 .control-section.collapsed {
@@ -761,7 +763,7 @@ body.light-mode .theme-toggle .sun { display: block; }
 .btn-group {
   display: flex;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-sm);
   padding: 3px;
 }
@@ -806,6 +808,28 @@ body.light-mode .theme-toggle .sun { display: block; }
 .btn-option.active {
   background: #dc2626;
   color: #ffffff;
+}
+
+
+/* ===== Zoom Controls Override ===== */
+.canvas-actions .btn-group.zoom-controls {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 0; /* Remove padding to match btn-ghost height better */
+  height: 34px; /* Explicit height to match other buttons? btn padding is 8px 16px. font 0.85rem (~13.6px). total ~30px + borders. let's check btn height */
+  align-items: center;
+}
+
+.canvas-actions .btn-group.zoom-controls .btn-option {
+  border-right: 1px solid var(--border);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-actions .btn-group.zoom-controls .btn-option:last-child {
+  border-right: none;
 }
 
 /* ===== Presets Grid ===== */

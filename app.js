@@ -964,19 +964,69 @@
   });
 
   // Zoom controls
+  // Zoom controls (Smart 10% Stepping)
   btnZoomIn.addEventListener('click', () => {
-    currentZoom = Math.min(3.0, currentZoom + 0.1);
+    let currentVal = Math.round(currentZoom * 100);
+    let nextVal = Math.floor(currentVal / 10) * 10 + 10;
+    currentZoom = Math.min(5.0, nextVal / 100); // Max 500% to match input max
     updateZoom();
   });
 
   btnZoomOut.addEventListener('click', () => {
-    currentZoom = Math.max(0.2, currentZoom - 0.1);
+    let currentVal = Math.round(currentZoom * 100);
+    // Snap to lower 10 multiple
+    // If 94 -> 90. If 100 -> 90.
+    let nextVal = Math.ceil(currentVal / 10) * 10 - 10;
+    currentZoom = Math.max(0.1, nextVal / 100); // Min 10% to match input min
     updateZoom();
   });
 
   btnZoomReset.addEventListener('click', () => {
-    currentZoom = 1.0;
-    updateZoom();
+    if (btnZoomReset.querySelector('input')) return; // Already editing
+
+    const currentVal = Math.round(currentZoom * 100);
+    btnZoomReset.textContent = '';
+    
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = currentVal;
+    
+    // Inline styles for the input
+    input.style.width = '36px';
+    input.style.background = 'transparent';
+    input.style.border = 'none';
+    input.style.color = 'inherit';
+    input.style.fontFamily = 'inherit';
+    input.style.fontSize = 'inherit';
+    input.style.fontWeight = '500';
+    input.style.textAlign = 'center';
+    input.style.outline = 'none';
+    // Remove spinner
+    // standard css handles this usually, or we add class? 
+    // minimal style is fine.
+    
+    const finish = () => {
+      let val = parseInt(input.value);
+      if (isNaN(val)) val = currentVal;
+      val = Math.max(10, Math.min(500, val)); // Clamp 10-500%
+      currentZoom = val / 100;
+      updateZoom();
+    };
+
+    input.addEventListener('blur', finish);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        input.blur(); 
+      }
+      e.stopPropagation(); // Prevent potentially triggering other keys
+    });
+    
+    // Stop propagation of click on input to prevent immediate close or issues
+    input.addEventListener('click', (e) => e.stopPropagation());
+
+    btnZoomReset.appendChild(input);
+    input.focus();
+    input.select();
   });
 
   function updateZoom() {
@@ -1060,23 +1110,50 @@
     const rect = cropOverlay.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+    
+    // Calculate Image Bounds relative to Overlay
+    const canvasRect = canvas.getBoundingClientRect();
+    const imgX = canvasRect.left - rect.left;
+    const imgY = canvasRect.top - rect.top;
+    const imgW = canvasRect.width;
+    const imgH = canvasRect.height;
+    
+    // Bounds
+    const minX = imgX;
+    const minY = imgY;
+    const maxX = imgX + imgW;
+    const maxY = imgY + imgH;
 
     if (isDraggingRect) {
       cropRectData.x = mouseX - dragOffset.x;
       cropRectData.y = mouseY - dragOffset.y;
       
-      // Clamp to overlay
-      cropRectData.x = Math.max(0, Math.min(rect.width - cropRectData.w, cropRectData.x));
-      cropRectData.y = Math.max(0, Math.min(rect.height - cropRectData.h, cropRectData.y));
+      // Clamp to Image Bounds
+      cropRectData.x = Math.max(minX, Math.min(maxX - cropRectData.w, cropRectData.x));
+      cropRectData.y = Math.max(minY, Math.min(maxY - cropRectData.h, cropRectData.y));
       
       updateCropRectUI();
     } else if (cropStart) {
-      let w = mouseX - cropStart.x;
-      let h = mouseY - cropStart.y;
+      // Clamp start point first (in case it started outside? usually safe if mousedown inside)
+      // But current mouse position should be clamped
+      const currentX = Math.max(minX, Math.min(maxX, mouseX));
+      const currentY = Math.max(minY, Math.min(maxY, mouseY));
+      
+      let w = currentX - cropStart.x;
+      let h = currentY - cropStart.y;
 
       // Handle aspect ratios
       if (currentCropRatio === '1:1' || currentCropRatio === 'circle') {
         const side = Math.max(Math.abs(w), Math.abs(h));
+        // We need to check if expanding square fits? 
+        // Simple approach: Use calculated side but clamp result?
+        // Better: standard logic then clamp?
+        
+        // Let's stick to standard logic then clamp box?
+        // If we clamp box, aspect ratio might break.
+        // For simplicity, let's just use the w, h as is, derived from clamped mouse. 
+        // But if we force aspect ratio, the other dimension might exceed bound.
+        
         w = w >= 0 ? side : -side;
         h = h >= 0 ? side : -side;
       } else if (currentCropRatio === '16:9') {
@@ -1084,10 +1161,27 @@
         h = h >= 0 ? targetH : -targetH;
       }
 
-      cropRectData.x = w >= 0 ? cropStart.x : cropStart.x + w;
-      cropRectData.y = h >= 0 ? cropStart.y : cropStart.y + h;
-      cropRectData.w = Math.abs(w);
-      cropRectData.h = Math.abs(h);
+      let newX = w >= 0 ? cropStart.x : cropStart.x + w;
+      let newY = h >= 0 ? cropStart.y : cropStart.y + h;
+      let newW = Math.abs(w);
+      let newH = Math.abs(h);
+      
+      // Clamp the resulting box to image bounds (preserving size/ratio if possible? no, must contain)
+      // If it goes out, we should probably limit the growth.
+      // Complex constraint for fixed ratio. 
+      // For now, let's just clamp the box and ignore ratio if it breaks? 
+      // UX: User expects ratio to hold. So we must stop growing if hit edge.
+      
+      // Check bounds
+      if (newX < minX) { newW -= (minX - newX); newX = minX; }
+      if (newY < minY) { newH -= (minY - newY); newY = minY; }
+      if (newX + newW > maxX) newW = maxX - newX;
+      if (newY + newH > maxY) newH = maxY - newY;
+      
+      cropRectData.x = newX;
+      cropRectData.y = newY;
+      cropRectData.w = newW;
+      cropRectData.h = newH;
 
       updateCropRectUI();
     }
