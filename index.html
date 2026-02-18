@@ -11,6 +11,7 @@
   <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
   <div class="app">
@@ -155,10 +156,18 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             현재 이미지 다운로드
           </button>
-          <button id="btnDownloadAll" class="btn btn-ghost btn-full" style="border: 1px solid var(--border);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"/><path d="M12 15V3"/><path d="M4 20h16"/></svg>
-            모든 이미지 다운로드 (.zip 권장)
-          </button>
+          <div style="width: 100%; height: 1px; background: var(--border); margin: 8px 0;"></div>
+          
+          <div style="display: flex; gap: 8px;">
+            <button id="btnDownloadAll" class="btn btn-ghost" style="border: 1px solid var(--border); flex: 1; font-size: 13px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              전체 (한장씩)
+            </button>
+            <button id="btnDownloadZip" class="btn btn-ghost" style="border: 1px solid var(--border); flex: 1; font-size: 13px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              전체 (.zip)
+            </button>
+          </div>
         </div>
       </div>
     </div>

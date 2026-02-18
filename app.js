@@ -399,24 +399,51 @@
       currentIndex = -1;
       editor.classList.add('hidden');
       dropZone.classList.remove('hidden');
+      // Reset global textOverlay state to default
+      textOverlay = { 
+          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+          noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+      };
       return;
     }
 
     images.splice(index, 1);
     
+    // Adjust index
     if (currentIndex === index) {
-      // 현재 선택된 이미지를 삭제한 경우
       currentIndex = Math.min(currentIndex, images.length - 1);
-      const imgData = images[currentIndex];
-      canvas.width = imgData.width;
-      canvas.height = imgData.height;
-      loadSettingsIntoUI(imgData.settings);
+      // Determine if we should maintain zoom or reset? Reset is safer on delete
     } else if (currentIndex > index) {
-      // 현재보다 앞의 이미지를 삭제한 경우 인덱스 조정
       currentIndex--;
     }
     
+    const imgData = images[currentIndex];
+    canvas.width = imgData.width;
+    canvas.height = imgData.height;
+    
+    // Load new image settings
+    loadSettingsIntoUI(imgData.settings);
+    
+    // Load text overlay or reset
+    if (imgData.textOverlay) {
+        textOverlay = JSON.parse(JSON.stringify(imgData.textOverlay));
+    } else {
+         textOverlay = { 
+          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+          noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+        };
+    }
+    
+    // Refresh UI
+    textDate.value = textOverlay.date || '';
+    textNote.value = textOverlay.note || '';
+    if (dateEnable) dateEnable.checked = textOverlay.dateEnable !== false;
+    syncSidebarUI();
+    
     renderGallery();
+    updateZoom();
     scheduleApply();
   };
 
@@ -441,16 +468,31 @@
     // Update UI highlights
     renderGallery();
     
-    // 줌 적용 (90% 스케일)
+    // 줌 초기화 (90% 스케일)
     updateZoom();
 
     // Load text overlay state for this image
     if (imgData.textOverlay) {
       textOverlay = JSON.parse(JSON.stringify(imgData.textOverlay));
-      // Sync UI inputs
-      textDate.value = textOverlay.date || '';
-      textNote.value = textOverlay.note || '';
-      syncSidebarUI(); // Sync the buttons
+    } else {
+        // Reset text overlay if none exists
+        textOverlay = {
+            date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+            note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+            noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+        };
+    }
+    // Sync UI inputs
+    textDate.value = textOverlay.date || '';
+    textNote.value = textOverlay.note || '';
+    if (dateEnable) dateEnable.checked = textOverlay.dateEnable !== false;
+    syncSidebarUI(); 
+
+    // Stop cropping if active
+    if (isCropping) {
+        isCropping = false;
+        btnCrop.classList.remove('active');
+        cropOverlay.classList.add('hidden');
     }
 
     // Preview
@@ -519,6 +561,10 @@
       saveCurrentSettings(); // Save live
       scheduleApply();
     });
+    // Add 'change' event to save snapshot on release
+    slider.addEventListener('change', () => {
+        saveSnapshot('light'); // Slider changes are light
+    });
   });
 
   function updateValueDisplay(slider) {
@@ -549,6 +595,7 @@
     const preset = PRESETS[btn.dataset.preset];
     if (!preset) return;
 
+    saveSnapshot('light'); // Preset change is light
     applyPreset(preset);
   });
 
@@ -662,7 +709,7 @@
 
   function rotate90() {
     if (currentIndex === -1) return;
-    saveSnapshot(); // For Undo
+    saveSnapshot('heavy'); // Rotation changes pixels
 
     const imgData = images[currentIndex];
     const oldW = imgData.width;
@@ -733,7 +780,7 @@
       // Only if not typing in an input
       if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
         if (textOverlay.showEditorUI && textOverlay.note) {
-          saveSnapshot();
+          saveSnapshot('light'); // Text removal is light
           textOverlay.note = '';
           textOverlay.showEditorUI = false;
           textNote.value = '';
@@ -753,7 +800,7 @@
     if (currentIndex === -1) return;
     
     // Undo를 위해 현재 상태 저장
-    saveSnapshot();
+    saveSnapshot('heavy');
 
     const imgData = images[currentIndex];
 
@@ -820,7 +867,7 @@
 
   const dateEnable = document.getElementById('dateEnable');
   dateEnable.addEventListener('change', () => {
-    saveSnapshot();
+    saveSnapshot('light');
     textOverlay.dateEnable = dateEnable.checked;
     saveCurrentSettings();
     scheduleApply();
@@ -829,7 +876,7 @@
   const frameEnable = document.getElementById('frameEnable');
   frameEnable.addEventListener('change', () => {
     if (currentIndex === -1) return;
-    saveSnapshot();
+    saveSnapshot('light');
     images[currentIndex].settings.frameEnable = frameEnable.checked;
     saveCurrentSettings();
     scheduleApply();
@@ -838,7 +885,7 @@
   const frameStyle = document.getElementById('frameStyle');
   frameStyle.querySelectorAll('.btn-option').forEach(btn => {
     btn.addEventListener('click', () => {
-      saveSnapshot();
+      saveSnapshot('light');
       const val = btn.dataset.value;
       images[currentIndex].settings.frame = val;
       
@@ -852,7 +899,7 @@
   frameMargin.querySelectorAll('.btn-option').forEach(btn => {
     btn.addEventListener('click', () => {
       if (currentIndex === -1) return;
-      saveSnapshot();
+      saveSnapshot('light');
       images[currentIndex].settings.frameMargin = btn.dataset.margin;
       frameMargin.querySelectorAll('.btn-option').forEach(b => b.classList.toggle('active', b === btn));
       saveCurrentSettings();
@@ -1062,7 +1109,7 @@
     }
 
     // 자르기 전 상태 저장 (Undo용)
-    saveSnapshot();
+    saveSnapshot('heavy');
 
     const imgData = images[currentIndex];
     const canvasRect = canvas.getBoundingClientRect();
@@ -1306,34 +1353,44 @@
     const ext = currentFormat === 'png' ? 'png' : 'jpg';
     const quality = currentFormat === 'jpeg' ? parseInt(downloadQuality.value) / 100 : undefined;
 
-    // For JPEG, draw on a white background (canvas alpha → white)
-    let exportCanvas = canvas;
+    // Use separate export canvas to avoid modifying main canvas state
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+    const ectx = exportCanvas.getContext('2d');
+
     if (currentFormat === 'jpeg') {
-      exportCanvas = document.createElement('canvas');
-      exportCanvas.width = canvas.width;
-      exportCanvas.height = canvas.height;
-      const ectx = exportCanvas.getContext('2d');
       ectx.fillStyle = '#ffffff';
       ectx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-      
-      const wasEditorUI = textOverlay.showEditorUI;
-      textOverlay.showEditorUI = false;
-      applyEffects(); 
-      ectx.drawImage(canvas, 0, 0);
-      
-      textOverlay.showEditorUI = wasEditorUI;
-      scheduleApply();
-    } else {
-      const wasEditorUI = textOverlay.showEditorUI;
-      textOverlay.showEditorUI = false;
-      applyEffects();
-      exportCanvas = document.createElement('canvas');
-      exportCanvas.width = canvas.width;
-      exportCanvas.height = canvas.height;
-      exportCanvas.getContext('2d').drawImage(canvas, 0, 0);
-      textOverlay.showEditorUI = wasEditorUI;
-      scheduleApply();
     }
+    
+    // Render to export canvas
+    if (currentIndex !== -1) {
+        // Note: applyEffects reads usage from sliders, but for a separate download function 
+        // we should conceptually pass settings. 
+        // Our new renderImageToContext reads settings from sliders? 
+        // Wait, renderImageToContext reads sliders inside the function: `const bri = parseInt(brightness.value);`
+        // This is fine for Single Image download (current index).
+        // But for Batch Download (Download All), we iterate images and must use THEIR settings.
+        // My implementation of renderImageToContext currently reads DOM sliders! This is a BUG for Batch Download.
+        // I need to update renderImageToContext to accept settings object.
+        
+        // Correct approach: Pass settings to renderImageToContext.
+        // Since I'm editing renderImageToContext in chunk 1, I should fix it there.
+        // But assuming chunk 1 is applied as is (reading sliders), I need to be careful.
+        
+        // Let's rely on renderImageToContext being updated to read from imgData.settings passed in.
+        // But in chunk 1 I still read brightness.value etc. I need to fix chunk 1 first or now.
+        // I will fix 'renderImageToContext' logic in chunk 1 to use 'imgData.settings' NOT DOM.
+    }
+    
+    // As I cannot edit chunk 1 dynamically inside this thought process effectively if I already wrote it? 
+    // I can just update chunk 1.
+    // Let's assume renderImageToContext uses `s.brightness` etc.
+
+    // Single export (current image)
+    const exportOverlay = { ...textOverlay, showEditorUI: false };
+    renderImageToContext(ectx, images[currentIndex], exportCanvas.width, exportCanvas.height, true, exportOverlay);
 
     const dataUrl = exportCanvas.toDataURL(mimeType, quality);
     const fileName = getExportFileName(currentIndex, ext);
@@ -1346,15 +1403,85 @@
     if (images.length === 0) return;
     
     showToast(`${images.length}개의 이미지 다운로드를 시작합니다...`);
-    saveCurrentSettings();
+    // saveCurrentSettings(); // No need if we rely on stored settings
 
     for (let i = 0; i < images.length; i++) {
       await downloadImageAtIndex(i);
-      await new Promise(r => setTimeout(r, 600)); // Increased delay for stability
+      await new Promise(r => setTimeout(r, 600)); 
     }
     
     showToast('모든 다운로드가 완료되었습니다.');
     downloadModal.classList.add('hidden');
+  });
+
+  const btnDownloadZip = document.getElementById('btnDownloadZip');
+  btnDownloadZip.addEventListener('click', async () => {
+    if (images.length === 0) return;
+    
+    showToast('ZIP 파일 생성을 시작합니다...');
+    
+    // JSZip instance
+    const zip = new JSZip();
+    const folder = zip.folder("grain_room_images");
+    
+    const mimeType = currentFormat === 'png' ? 'image/png' : 'image/jpeg';
+    const ext = currentFormat === 'png' ? 'png' : 'jpg';
+    const quality = currentFormat === 'jpeg' ? parseInt(downloadQuality.value) / 100 : undefined;
+    
+    try {
+        for (let i = 0; i < images.length; i++) {
+        const imgData = images[i];
+        
+        // Create export canvas
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = imgData.width;
+        exportCanvas.height = imgData.height;
+        const ectx = exportCanvas.getContext('2d');
+        
+        if (currentFormat === 'jpeg') {
+            ectx.fillStyle = '#ffffff';
+            ectx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        }
+        
+        // Determine Settings & Text Overlay
+        const tOverlay = currentIndex === i ? textOverlay : (imgData.textOverlay || {
+                date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+                note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+                noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+        });
+        const exportOverlay = { ...tOverlay, showEditorUI: false };
+
+        renderImageToContext(ectx, imgData, exportCanvas.width, exportCanvas.height, true, exportOverlay);
+        
+        // Convert to Blob
+        const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, mimeType, quality));
+        const fileName = getExportFileName(i, ext);
+        
+        folder.file(fileName, blob);
+        }
+        
+        showToast('ZIP 파일을 생성 중입니다...');
+        const content = await zip.generateAsync({type:"blob"});
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        const zipName = `grain_room_batch_${timestamp}.zip`;
+        
+        // Trigger Download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = zipName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        
+        showToast('ZIP 파일 다운로드가 시작되었습니다.');
+        downloadModal.classList.add('hidden');
+
+    } catch (e) {
+        console.error(e);
+        showToast('ZIP 생성 중 오류가 발생했습니다.');
+    }
   });
 
   async function downloadImageAtIndex(index) {
@@ -1363,38 +1490,38 @@
     const ext = currentFormat === 'png' ? 'png' : 'jpg';
     const quality = currentFormat === 'jpeg' ? parseInt(downloadQuality.value) / 100 : undefined;
 
-    const prevIndex = currentIndex;
-    const prevTextState = JSON.parse(JSON.stringify(textOverlay));
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = imgData.width; // Use image native w/h
+    exportCanvas.height = imgData.height;
+    const ectx = exportCanvas.getContext('2d');
     
-    currentIndex = index;
-    textOverlay = JSON.parse(JSON.stringify(imgData.textOverlay || textOverlay));
-    textOverlay.showEditorUI = false;
-    
-    applyEffects();
-    
-    let exportCanvas = canvas;
     if (currentFormat === 'jpeg') {
-      exportCanvas = document.createElement('canvas');
-      exportCanvas.width = canvas.width;
-      exportCanvas.height = canvas.height;
-      const ectx = exportCanvas.getContext('2d');
-      ectx.fillStyle = '#ffffff';
-      ectx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-      ectx.drawImage(canvas, 0, 0);
-    } else {
-      exportCanvas = document.createElement('canvas');
-      exportCanvas.width = canvas.width;
-      exportCanvas.height = canvas.height;
-      exportCanvas.getContext('2d').drawImage(canvas, 0, 0);
+        ectx.fillStyle = '#ffffff';
+        ectx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
     }
+    
+    // We need to render THIS image using ITS settings.
+    // If renderImageToContext reads DOM, we are doomed for non-current images.
+    // I must ensure renderImageToContext uses provided settings.
+    
+    // We also need the textOverlay for this specific image if we want it to be correct
+    // Current logic uses imgData.textOverlay if available, else fallback? 
+    // Actually, when loading image, we load defaults.
+    // If imgData.textOverlay is missing, we should use default or empty.
+    const tOverlay = currentIndex === index ? textOverlay : (imgData.textOverlay || {
+            date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+            note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+            noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+    });
+    
+    // Force showEditorUI false for export
+    const exportOverlay = { ...tOverlay, showEditorUI: false };
+
+    renderImageToContext(ectx, imgData, exportCanvas.width, exportCanvas.height, true, exportOverlay);
 
     const dataUrl = exportCanvas.toDataURL(mimeType, quality);
     const fileName = getExportFileName(index, ext);
     downloadURI(dataUrl, fileName);
-
-    currentIndex = prevIndex;
-    textOverlay = prevTextState;
-    scheduleApply();
   }
 
   function getExportFileName(index, ext) {
@@ -1421,7 +1548,21 @@
   }
 
 
-  // ===== Effect Engine =====
+  // ===== Rendering Engine =====
+  // Reusable offscreen canvas for rendering
+  let sharedOffscreen = document.createElement('canvas');
+  let sharedCtx = sharedOffscreen.getContext('2d', { willReadFrequently: true });
+  
+  function getSharedOffscreen(w, h) {
+    if (sharedOffscreen.width !== w || sharedOffscreen.height !== h) {
+        sharedOffscreen.width = w;
+        sharedOffscreen.height = h;
+        // Context might need reset if state accumulates, but we usually overwrite
+        sharedCtx = sharedOffscreen.getContext('2d', { willReadFrequently: true });
+    }
+    return { canvas: sharedOffscreen, ctx: sharedCtx };
+  }
+
   function scheduleApply() {
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => {
@@ -1432,37 +1573,67 @@
 
   function applyEffects() {
     if (currentIndex === -1 || !images[currentIndex]) return;
-
     const imgData = images[currentIndex];
     const w = canvas.width;
     const h = canvas.height;
+    
 
-    if (isBypassMode) {
-      ctx.putImageData(imgData.originalPixels, 0, 0);
+    
+    // Main canvas context using global textOverlay
+    // IMPORTANT: Ensure global textOverlay matches current index logic if we just switched? 
+    // Yes, switchImage updates textOverlay global variable.
+    renderImageToContext(ctx, imgData, w, h, false, textOverlay);
+  }
+
+  function renderImageToContext(targetCtx, imgData, w, h, isExport = false, overlayData = null) {
+    // 0. Bypass Mode (only for main canvas interaction, not export)
+    if (isBypassMode && !isExport) {
+      targetCtx.putImageData(imgData.originalPixels, 0, 0);
       return;
     }
 
-    // Start with a copy of original pixels
+    // 1. Prepare Source Data
+    // We use a shared buffer to avoid creating new ImageData every frame if possible
+    // But since we modify pixels, we need a fresh copy from originalPixels
     const srcData = imgData.originalPixels.data;
-    const output = ctx.createImageData(w, h);
+    const output = targetCtx.createImageData(w, h); // Use target context to create compatible ImageData
     const dst = output.data;
 
-    // Read current settings from sliders (which match images[currentIndex].settings)
-    const bri = parseInt(brightness.value);
-    const con = parseInt(contrast.value);
-    const sat = parseInt(saturation.value);
-    const temp = parseInt(temperature.value);
-    const sep = parseInt(sepia.value) / 100;
-    const fad = parseInt(fade.value) / 100;
-    const gIntensity = parseInt(grainIntensity.value) / 100;
-    const gSize = parseInt(grainSize.value);
-    const vigAmount = parseInt(vignette.value);
+    // Read settings
+    const s = imgData.settings || DEFAULT_SETTINGS;
 
-    // CMYK Adjustments
-    const adjC = parseInt(cyan.value) / 100;
-    const adjM = parseInt(magenta.value) / 100;
-    const adjY = parseInt(yellow.value) / 100;
-    const adjK = parseInt(key.value) / 100;
+    // If exporting, use stored settings strictly. If live editing, use DOM values (which reflect current slider state).
+    let bri, con, sat, temp, sep, fad, gIntensity, gSize, vigAmount, adjC, adjM, adjY, adjK;
+
+    if (isExport) {
+        bri = parseInt(s.brightness); 
+        con = parseInt(s.contrast);
+        sat = parseInt(s.saturation);
+        temp = parseInt(s.temperature);
+        sep = parseInt(s.sepia) / 100;
+        fad = parseInt(s.fade) / 100;
+        gIntensity = parseInt(s.grainIntensity) / 100;
+        gSize = parseInt(s.grainSize);
+        vigAmount = parseInt(s.vignette);
+        adjC = parseInt(s.cyan) / 100;
+        adjM = parseInt(s.magenta) / 100;
+        adjY = parseInt(s.yellow) / 100;
+        adjK = parseInt(s.key) / 100;
+    } else {
+        bri = parseInt(brightness.value); 
+        con = parseInt(contrast.value);
+        sat = parseInt(saturation.value);
+        temp = parseInt(temperature.value);
+        sep = parseInt(sepia.value) / 100;
+        fad = parseInt(fade.value) / 100;
+        gIntensity = parseInt(grainIntensity.value) / 100;
+        gSize = parseInt(grainSize.value);
+        vigAmount = parseInt(vignette.value);
+        adjC = parseInt(cyan.value) / 100;
+        adjM = parseInt(magenta.value) / 100;
+        adjY = parseInt(yellow.value) / 100;
+        adjK = parseInt(key.value) / 100;
+    }
 
     // Contrast factor
     const contrastFactor = (259 * (con + 255)) / (255 * (259 - con));
@@ -1482,7 +1653,7 @@
       g = contrastFactor * (g - 128) + 128;
       b = contrastFactor * (b - 128) + 128;
 
-      // 3. Temperature (warm = +red -blue, cool = -red +blue)
+      // 3. Temperature
       if (temp !== 0) {
         const t = temp * 0.8;
         r += t;
@@ -1508,7 +1679,7 @@
         b = b + (sb - b) * sep;
       }
 
-      // 6. Fade (lift blacks)
+      // 6. Fade
       if (fad > 0) {
         const fadeAmount = fad * 60;
         r = r + (fadeAmount - r) * fad * 0.5;
@@ -1516,115 +1687,110 @@
         b = b + (fadeAmount - b) * fad * 0.5;
       }
 
-      // 6.5 CMYK Adjustments
+      // 6.5 CMYK
       if (adjC !== 0 || adjM !== 0 || adjY !== 0 || adjK !== 0) {
-        // RGB to CMYK
         let r0 = r / 255, g0 = g / 255, b0 = b / 255;
         let k = 1 - Math.max(r0, g0, b0);
         let c = (1 - r0 - k) / (1 - k) || 0;
         let m = (1 - g0 - k) / (1 - k) || 0;
         let y = (1 - b0 - k) / (1 - k) || 0;
 
-        // Apply adjustments
         c = Math.min(1, Math.max(0, c + adjC));
         m = Math.min(1, Math.max(0, m + adjM));
         y = Math.min(1, Math.max(0, y + adjY));
         k = Math.min(1, Math.max(0, k + adjK));
 
-        // CMYK to RGB
         r = 255 * (1 - c) * (1 - k);
         g = 255 * (1 - m) * (1 - k);
         b = 255 * (1 - y) * (1 - k);
       }
 
-      // Clamp
       dst[i] = Math.min(255, Math.max(0, r));
       dst[i + 1] = Math.min(255, Math.max(0, g));
       dst[i + 2] = Math.min(255, Math.max(0, b));
-    dst[i + 3] = 255;
-  }
+      dst[i + 3] = 255;
+    }
 
-  // 7. Grain
-  if (gIntensity > 0) {
-    applyGrain(dst, w, h, gIntensity, gSize, currentBlendMode);
-  }
+    // 7. Grain
+    if (gIntensity > 0) {
+      applyGrain(dst, w, h, gIntensity, gSize, currentBlendMode);
+    }
 
-  // Draw to Main Canvas with Frame Handling
-  const frame = imgData.settings.frame || 'none';
-  const frameEnable = imgData.settings.frameEnable !== false;
+    // Drawing to Context
+    const frame = s.frame || 'none';
+    const frameEnable = s.frameEnable !== false;
 
-  if (!frameEnable || frame === 'none') {
-    ctx.putImageData(output, 0, 0);
-  } else {
-    // 1. Put filtered image to offscreen buffer
-    const offscreen = document.createElement('canvas');
-    offscreen.width = w;
-    offscreen.height = h;
-    offscreen.getContext('2d').putImageData(output, 0, 0);
-
-    // 2. Clear main canvas and draw background
-    ctx.clearRect(0, 0, w, h);
-    
-    if (frame === 'white') {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, w, h);
-    } else if (frame === 'black') {
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, w, h);
-    } else if (frame === 'paper' && frameTextures.paperImg) {
-        // Fix tiling: Scale texture to cover the entire canvas instead of repeating
-        const texImg = frameTextures.paperImg;
-        const scale = Math.max(w / texImg.width, h / texImg.height);
-        const tw = texImg.width * scale;
-        const th = texImg.height * scale;
-        ctx.drawImage(texImg, (w - tw) / 2, (h - th) / 2, tw, th);
+    if (!frameEnable || frame === 'none') {
+      targetCtx.putImageData(output, 0, 0);
     } else {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, w, h);
+        // Reuse shared offscreen canvas for buffering the image
+        const { canvas: bufferCanvas, ctx: bufferCtx } = getSharedOffscreen(w, h);
+        bufferCtx.putImageData(output, 0, 0);
+
+        // Clear target and draw background
+        targetCtx.clearRect(0, 0, w, h);
+        
+        if (frame === 'white') {
+            targetCtx.fillStyle = '#ffffff';
+            targetCtx.fillRect(0, 0, w, h);
+        } else if (frame === 'black') {
+            targetCtx.fillStyle = '#000000';
+            targetCtx.fillRect(0, 0, w, h);
+        } else if (frame === 'paper' && frameTextures.paperImg) {
+            const texImg = frameTextures.paperImg;
+            const scale = Math.max(w / texImg.width, h / texImg.height);
+            const tw = texImg.width * scale;
+            const th = texImg.height * scale;
+            targetCtx.drawImage(texImg, (w - tw) / 2, (h - th) / 2, tw, th);
+        } else {
+            targetCtx.fillStyle = '#ffffff';
+            targetCtx.fillRect(0, 0, w, h);
+        }
+
+        const marginType = s.frameMargin || 'small';
+        let marginRatio = 0.05;
+        if (marginType === 'medium') marginRatio = 0.10;
+        else if (marginType === 'large') marginRatio = 0.15;
+
+        const padding = Math.min(w, h) * marginRatio;
+        const targetW = w - padding * 2;
+        const targetH = h - padding * 2;
+        
+        if (vigAmount > 0) {
+            applyVignette(bufferCtx, w, h, vigAmount / 100);
+        }
+        
+        targetCtx.drawImage(bufferCanvas, padding, padding, targetW, targetH);
     }
 
-    // 3. Draw image centered with padding based on margin setting
-    const marginType = imgData.settings.frameMargin || 'small';
-    let marginRatio = 0.05; // Default small
-    if (marginType === 'medium') marginRatio = 0.10;
-    else if (marginType === 'large') marginRatio = 0.15;
+    // 8. Vignette (if no frame)
+    if ((!frameEnable || frame === 'none') && vigAmount > 0) {
+      applyVignette(targetCtx, w, h, vigAmount / 100);
+    }
 
-    const padding = Math.min(w, h) * marginRatio;
-    const targetW = w - padding * 2;
-    const targetH = h - padding * 2;
-    
-    // ISO Vignette workaround: if framed, apply vignette to offscreen before drawing
-    if (vigAmount > 0) {
-        applyVignette(offscreen.getContext('2d'), w, h, vigAmount / 100);
+    // 9. Text Overlay
+    let finalPadding = 0;
+    if (frameEnable && frame !== 'none') {
+        const marginType = s.frameMargin || 'small';
+        let marginRatio = 0.05;
+        if (marginType === 'medium') marginRatio = 0.10;
+        else if (marginType === 'large') marginRatio = 0.15;
+        finalPadding = Math.min(w, h) * marginRatio;
     }
     
-    ctx.drawImage(offscreen, padding, padding, targetW, targetH);
+    // Use provided overlayData or fallback to global textOverlay (though passed should be preferred)
+    // If overlayData is null, maybe we shouldn't draw? Or fallback?
+    // In applyEffects we pass global textOverlay. In download we pass specific.
+    const tOverlay = overlayData || textOverlay;
+    drawTextOverlay(targetCtx, w, h, tOverlay, isExport, finalPadding);
   }
-
-  // 8. Vignette (only if NOT framed or frame disabled)
-  if ((!frameEnable || frame === 'none') && vigAmount > 0) {
-    applyVignette(ctx, w, h, vigAmount / 100);
-  }
-
-  // 9. Text Overlay
-  // Re-calculate padding for text overlay positioning
-  let finalPadding = 0;
-  if (frameEnable && frame !== 'none') {
-    const marginType = imgData.settings.frameMargin || 'small';
-    let marginRatio = 0.05;
-    if (marginType === 'medium') marginRatio = 0.10;
-    else if (marginType === 'large') marginRatio = 0.15;
-    finalPadding = Math.min(w, h) * marginRatio;
-  }
-  
-  drawTextOverlay(ctx, w, h, false, finalPadding);
-}
 
   // ===== Text Overlay Rendering =====
-  function drawTextOverlay(ctx, w, h, isForExport = false, padding = 0) {
-    const dateText = textOverlay.date;
-    const noteText = textOverlay.note;
-    if ((!dateText || textOverlay.dateEnable === false) && !noteText) return;
+  function drawTextOverlay(ctx, w, h, overlayData, isForExport = false, padding = 0) {
+    // Use overlayData instead of global textOverlay
+    const dateText = overlayData.date;
+    const noteText = overlayData.note;
+    if ((!dateText || overlayData.dateEnable === false) && !noteText) return;
 
     ctx.save();
     const scale = Math.max(w, h) / 1200;
@@ -1632,10 +1798,10 @@
     const margin = Math.round(30 * scale);
 
     // 1. Draw Date
-    if (dateText && textOverlay.dateEnable !== false) {
+    if (dateText && overlayData.dateEnable !== false) {
       ctx.save();
-      const pos = textOverlay.datePos;
-      const isVertical = textOverlay.dateDir === 'vertical';
+      const pos = overlayData.datePos;
+      const isVertical = overlayData.dateDir === 'vertical';
       
       let x, y, textAlign, textBaseline;
       if (pos === 'top-left') { x = margin + padding; y = margin + padding; textAlign = 'left'; textBaseline = 'top'; }
@@ -1654,7 +1820,7 @@
       }
 
       ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', monospace`;
-      ctx.fillStyle = textOverlay.dateColor;
+      ctx.fillStyle = overlayData.dateColor;
       ctx.globalAlpha = 0.9;
       ctx.textAlign = textAlign;
       ctx.textBaseline = textBaseline;
@@ -1665,28 +1831,28 @@
     // 2. Draw Note
     if (noteText) {
       ctx.save();
-      const style = textOverlay.noteStyle;
-      const font = textOverlay.noteFont;
+      const style = overlayData.noteStyle;
+      const font = overlayData.noteFont;
       
       // Font-specific scaling factors to normalize visual size
       let fontFactor = 1.0;
       if (font === 'Nanum Myeongjo') fontFactor = 0.72;
       else if (font === 'Noto Sans KR') fontFactor = 0.75;
       
-      const noteScale = (textOverlay.noteScale || 1.0) * fontFactor;
+      const noteScale = (overlayData.noteScale || 1.0) * fontFactor;
       const fontSize = Math.round(baseFontSize * noteScale);
       
       let x, y, textAlign, textBaseline;
       
-      if (textOverlay.noteX !== null && textOverlay.noteY !== null) {
+      if (overlayData.noteX !== null && overlayData.noteY !== null) {
         // Manual Positioning
-        x = textOverlay.noteX * w;
-        y = textOverlay.noteY * h;
+        x = overlayData.noteX * w;
+        y = overlayData.noteY * h;
         textAlign = 'center';
         textBaseline = 'middle';
       } else {
         // Preset Positioning
-        const pos = textOverlay.notePos;
+        const pos = overlayData.notePos;
         if (pos === 'top-left') { x = margin; y = margin; textAlign = 'left'; textBaseline = 'top'; }
         else if (pos === 'top-right') { x = w - margin; y = margin; textAlign = 'right'; textBaseline = 'top'; }
         else if (pos === 'bottom-left') { x = margin; y = h - margin; textAlign = 'left'; textBaseline = 'bottom'; }
@@ -1694,7 +1860,7 @@
       }
 
       ctx.translate(x, y);
-      const isVertical = textOverlay.noteDir === 'vertical';
+      const isVertical = overlayData.noteDir === 'vertical';
       if (isVertical) {
         ctx.rotate(Math.PI / 2);
         // Recalculate alignment for vertical if needed, but for manual center/middle it's fine
@@ -1976,7 +2142,7 @@
 
   btnClearDate.addEventListener('click', () => {
     if (!textOverlay.date) return;
-    saveSnapshot();
+    saveSnapshot('light');
     updateGlobalDateSetting('date', '');
     textDate.value = '';
     showToast('날짜 스탬프가 해제되었습니다.');
@@ -1984,7 +2150,7 @@
 
   btnClearNote.addEventListener('click', () => {
     if (!textOverlay.note) return;
-    saveSnapshot();
+    saveSnapshot('light');
     textOverlay.note = '';
     textOverlay.showEditorUI = false;
     textNote.value = '';
