@@ -105,6 +105,7 @@
     datePos: 'bottom-right',
     dateDir: 'horizontal',
     dateColor: '#ffffff',
+    dateStyle: 'normal',
     
     note: '',
     notePos: 'bottom-left',
@@ -295,6 +296,14 @@
     // Update Gallery UI
     renderGallery();
 
+    // Auto-scroll to the end of the gallery
+    setTimeout(() => {
+      const gallery = document.getElementById('imageGallery');
+      if (gallery) {
+        gallery.scrollTo({ left: gallery.scrollWidth, behavior: 'smooth' });
+      }
+    }, 100);
+
     // Switch to the first newly added image if none selected, or stay on current
     if (currentIndex === -1) {
       switchImage(0);
@@ -336,12 +345,16 @@
 
           resolve({
             id: Date.now() + Math.random(),
+            initialImage: img, // Store initial state for full reset
             originalImage: img,
-            originalPixels: pixels,
-            thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.7),
-            settings: { ...DEFAULT_SETTINGS },
             width: w,
             height: h,
+            originalPixels: pixels, // Store pixels of the scaled original image
+            thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.7),
+            
+            // Settings
+            settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+            
             // 원본 백업 (초기화 시 자르기 복원용)
             backupImage: img,
             backupWidth: w,
@@ -401,7 +414,7 @@
       dropZone.classList.remove('hidden');
       // Reset global textOverlay state to default
       textOverlay = { 
-          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
           note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
           noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
       };
@@ -426,11 +439,11 @@
     loadSettingsIntoUI(imgData.settings);
     
     // Load text overlay or reset
-    if (imgData.textOverlay) {
+     if (imgData.textOverlay) {
         textOverlay = JSON.parse(JSON.stringify(imgData.textOverlay));
     } else {
          textOverlay = { 
-          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
           note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
           noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
         };
@@ -472,12 +485,12 @@
     updateZoom();
 
     // Load text overlay state for this image
-    if (imgData.textOverlay) {
+     if (imgData.textOverlay) {
       textOverlay = JSON.parse(JSON.stringify(imgData.textOverlay));
     } else {
         // Reset text overlay if none exists
         textOverlay = {
-            date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
+            date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
             note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
             noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
         };
@@ -804,11 +817,32 @@
 
     const imgData = images[currentIndex];
 
-    // 원본 백업에서 복원
-    imgData.originalImage = imgData.backupImage;
-    imgData.originalPixels = imgData.backupPixels;
-    imgData.width = imgData.backupWidth;
-    imgData.height = imgData.backupHeight;
+    // 원본 백업에서 복원 (initialImage가 있으면 그것을 사용하여 완전 초기화)
+    if (imgData.initialImage) {
+      imgData.originalImage = imgData.initialImage;
+      imgData.width = imgData.initialImage.width;
+      imgData.height = imgData.initialImage.height;
+      
+      // 픽셀 데이터 재생성
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = imgData.width;
+      tempCanvas.height = imgData.height;
+      const tctx = tempCanvas.getContext('2d');
+      tctx.drawImage(imgData.initialImage, 0, 0);
+      imgData.originalPixels = tctx.getImageData(0, 0, imgData.width, imgData.height);
+      
+      // 백업본도 초기화 상태로 동기화
+      imgData.backupImage = imgData.initialImage;
+      imgData.backupWidth = imgData.width;
+      imgData.backupHeight = imgData.height;
+      imgData.backupPixels = imgData.originalPixels;
+    } else {
+      // Fallback
+      imgData.originalImage = imgData.backupImage;
+      imgData.originalPixels = imgData.backupPixels;
+      imgData.width = imgData.backupWidth;
+      imgData.height = imgData.backupHeight;
+    }
     
     // 완전 초기화 (그레인 0 포함)
     imgData.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
@@ -930,38 +964,7 @@
     if (index > 0) section.classList.add('collapsed');
   });
 
-  // Gallery Resizer - 썸네일 크기 조절
-  let isResizing = false;
-  let resizeStartY = 0;
-  let thumbBaseHeight = 80; // CSS 기본 높이
-  
-  galleryResizer.addEventListener('mousedown', (e) => {
-    isResizing = true;
-    resizeStartY = e.clientY;
-    galleryResizer.classList.add('dragging');
-    document.body.style.cursor = 'ns-resize';
-  });
 
-  document.addEventListener('mousemove', (e) => {
-    if (!isResizing) return;
-    
-    const deltaY = resizeStartY - e.clientY; // 위로 가면 양수
-    resizeStartY = e.clientY;
-    
-    thumbBaseHeight = Math.min(160, Math.max(40, thumbBaseHeight + deltaY));
-    
-    // CSS 변수 업데이트 (썸네일 및 추가 버튼 동적 크기 조절)
-    // .app 클래스나 :root에 변수가 선언되어 있으므로, document.documentElement에 설정
-    document.documentElement.style.setProperty('--thumb-height', `${thumbBaseHeight}px`);
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (isResizing) {
-      isResizing = false;
-      galleryResizer.classList.remove('dragging');
-      document.body.style.cursor = '';
-    }
-  });
 
   // Zoom controls
   // Zoom controls (Smart 10% Stepping)
@@ -1914,11 +1917,37 @@
       }
 
       ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', monospace`;
-      ctx.fillStyle = overlayData.dateColor;
-      ctx.globalAlpha = 0.9;
       ctx.textAlign = textAlign;
       ctx.textBaseline = textBaseline;
-      ctx.fillText(dateText, 0, 0);
+
+      if (overlayData.dateStyle === 'vintage') {
+        // Retro Digital Style: Slightly larger and bolder
+        const vintageFontSize = Math.round(baseFontSize * 0.9);
+        ctx.font = `400 ${vintageFontSize}px 'Noto Sans KR', sans-serif`;
+        if ('letterSpacing' in ctx) ctx.letterSpacing = `${-0.08}em`;
+        
+        ctx.strokeStyle = '#3e2723'; 
+        ctx.lineWidth = Math.max(1, 3 * scale);
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.strokeText(dateText, 0, 0);
+        
+        ctx.fillStyle = overlayData.dateColor; 
+        ctx.globalAlpha = 1.0;
+        ctx.fillText(dateText, 0, 0);
+        if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; // Reset
+      } else {
+        // Retro Film Style: Digital-7 Mono with light dark orange glow
+        ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', monospace`;
+        
+        ctx.shadowColor = '#7c2d12'; // One step darker orange glow
+        ctx.shadowBlur = 6 * scale; 
+        
+        ctx.fillStyle = overlayData.dateColor;
+        ctx.globalAlpha = 0.9;
+        ctx.fillText(dateText, 0, 0);
+        ctx.fillText(dateText, 0, 0); // Double draw to give substance under the glow
+      }
       ctx.restore();
     }
 
@@ -2099,6 +2128,7 @@
   const textNote = document.getElementById('textNote');
   const datePosition = document.getElementById('datePosition');
   const dateDirection = document.getElementById('dateDirection');
+  const dateStyle = document.getElementById('dateStyle');
   const notePosition = document.getElementById('notePosition');
   const noteDirection = document.getElementById('noteDirection');
   const textDateColor = document.getElementById('textDateColor');
@@ -2110,6 +2140,7 @@
     // Sync Date Settings
     syncButtonGroup(datePosition, textOverlay.datePos);
     syncButtonGroup(dateDirection, textOverlay.dateDir);
+    syncButtonGroup(dateStyle, textOverlay.dateStyle);
     syncButtonGroup(textDateColor, textOverlay.dateColor);
     if (dateEnable) dateEnable.checked = textOverlay.dateEnable !== false;
     
@@ -2179,6 +2210,13 @@
   dateDirection.querySelectorAll('.btn-option').forEach(btn => {
     btn.addEventListener('click', () => {
       updateGlobalDateSetting('dateDir', btn.dataset.dir);
+      syncSidebarUI();
+    });
+  });
+
+  dateStyle.querySelectorAll('.btn-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      updateGlobalDateSetting('dateStyle', btn.dataset.style);
       syncSidebarUI();
     });
   });

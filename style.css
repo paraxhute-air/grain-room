@@ -136,17 +136,11 @@ body.light-mode .header {
 
 /* ===== Resizer ===== */
 .resizer {
-  height: 6px;
+  height: 2px;
   background: var(--border);
-  cursor: ns-resize;
   border-radius: 3px;
   margin: 4px 0;
-  transition: background 0.2s;
   flex: 0 0 auto;
-}
-
-.resizer:hover, .resizer.dragging {
-  background: var(--accent-primary);
 }
 
 /* ===== Zoom Controls ===== */
@@ -372,6 +366,8 @@ body.light-mode .logo svg {
   width: 100%;
   margin: 0 auto;
   padding: 4px 24px 20px 24px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .drop-zone {
@@ -413,11 +409,14 @@ body.light-mode .logo svg {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* 좌측 작업 영역 (갤러리 포함) */
 .canvas-area {
-  flex: 1;
+  flex: 1 1 0px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -465,6 +464,7 @@ body.light-mode .logo svg {
   overflow: hidden;
   position: relative;
   min-height: 0;
+  min-width: 0;
 }
 
 .canvas-wrapper canvas {
@@ -483,6 +483,7 @@ body.light-mode .canvas-wrapper canvas {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 /* ===== Buttons ===== */
@@ -1021,15 +1022,20 @@ body.light-mode .theme-toggle .sun { display: block; }
   display: flex;
   gap: 10px;
   padding: 10px;
-  overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: #dc2626 #cccccc; /* Red thumb, Light gray track for Firefox */
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
   align-items: flex-start;
   flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
   transition: background 0.2s, border 0.2s;
   border: 2px solid transparent;
+  margin-bottom: 8px;
 }
 
 .image-gallery.drag-over {
@@ -1038,12 +1044,26 @@ body.light-mode .theme-toggle .sun { display: block; }
 }
 
 .image-gallery::-webkit-scrollbar {
-  height: 4px;
+  height: 10px;
+  display: block !important;
+}
+
+.image-gallery::-webkit-scrollbar-track {
+  background: #cccccc; /* Light gray track from image */
+  border-radius: 5px;
 }
 
 .image-gallery::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  background: #dc2626; /* Active red from image */
+  border-radius: 5px;
+  border: 2px solid #cccccc; /* Padding effect with track color */
+  background-clip: content-box;
+  transition: background 0.2s;
+}
+
+.image-gallery::-webkit-scrollbar-thumb:hover {
+  background: #b91c1c; /* Darker red on hover */
+  background-clip: content-box;
 }
 
 .thumb-item {
@@ -1051,7 +1071,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   flex-direction: column;
   align-items: center;
   position: relative;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   width: auto; /* Fixed width for better alignment */
   cursor: pointer;
   transition: var(--transition);
@@ -1059,6 +1079,7 @@ body.light-mode .theme-toggle .sun { display: block; }
 
 .thumb-img-box {
   width: auto;
+  max-width: 180px;
   height: var(--thumb-height);
   display: inline-block;
   border-radius: 0;
@@ -1082,6 +1103,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   height: 100%;
   height: 100%;
   width: auto;
+  max-width: 180px;
   object-fit: contain;
   display: block;
 }
@@ -1281,6 +1303,8 @@ body.light-mode .theme-toggle .sun { display: block; }
     flex: none;
     border-bottom: 1px solid var(--border);
     padding-bottom: 8px; /* Space for scrollbar of actions if needed */
+    width: 100%;
+    overflow: hidden;
   }
 
   .canvas-wrapper {

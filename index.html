@@ -121,7 +121,7 @@
               다운로드
             </button>
           </div>
-          <div id="galleryResizer" class="resizer" title="드래그하여 갤러리 크기 조절"></div>
+          <div id="galleryResizer" class="resizer"></div>
           <!-- Image Gallery / Filmstrip -->
           <div id="imageGallery" class="image-gallery hidden">
             <!-- Thumbnails will be injected here -->
@@ -398,12 +398,18 @@
                 <button class="btn-option active" data-dir="horizontal">가로</button>
                 <button class="btn-option" data-dir="vertical">세로</button>
               </div>
+
+              <label><span>날짜 스타일</span></label>
+              <div class="btn-group" id="dateStyle">
+                <button class="btn-option active" data-style="normal">레트로 필름</button>
+                <button class="btn-option" data-style="vintage">레트로 디지털</button>
+              </div>
               
               <label><span>날짜 색상</span></label>
               <div class="btn-group" id="textDateColor">
-                <button class="btn-option active" data-color="#ffffff">화이트</button>
-                <button class="btn-option" data-color="#eab308">옐로우</button>
-                <button class="btn-option" data-color="#ea580c">오렌지</button>
+                <button class="btn-option active" data-color="#dddddd">화이트</button>
+                <button class="btn-option" data-color="#ca8a04">옐로우</button>
+                <button class="btn-option" data-color="#c2410c">오렌지</button>
               </div>
             </div>
           </div>
