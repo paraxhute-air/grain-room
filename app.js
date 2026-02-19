@@ -1891,7 +1891,7 @@
 
     ctx.save();
     const scale = Math.max(w, h) / 1200;
-    const baseFontSize = Math.round(36 * scale);
+    const baseFontSize = Math.round(38 * scale); // Adjusted to 38
     const margin = Math.round(30 * scale);
 
     // 1. Draw Date
@@ -1916,14 +1916,12 @@
         else { textAlign = 'right'; textBaseline = 'top'; }
       }
 
-      ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', monospace`;
       ctx.textAlign = textAlign;
       ctx.textBaseline = textBaseline;
 
       if (overlayData.dateStyle === 'vintage') {
-        // Retro Digital Style: Slightly larger and bolder
-        const vintageFontSize = Math.round(baseFontSize * 0.9);
-        ctx.font = `400 ${vintageFontSize}px 'Noto Sans KR', sans-serif`;
+        // Retro Digital Style: Noto Sans KR + Dark brown outline + Tight spacing
+        ctx.font = `400 ${baseFontSize}px 'Noto Sans KR', sans-serif`;
         if ('letterSpacing' in ctx) ctx.letterSpacing = `${-0.08}em`;
         
         ctx.strokeStyle = '#3e2723'; 
@@ -1937,16 +1935,11 @@
         ctx.fillText(dateText, 0, 0);
         if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; // Reset
       } else {
-        // Retro Film Style: Digital-7 Mono with light dark orange glow
+        // Retro Film Style: Digital-7 Mono (Original Look)
         ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', monospace`;
-        
-        ctx.shadowColor = '#7c2d12'; // One step darker orange glow
-        ctx.shadowBlur = 6 * scale; 
-        
         ctx.fillStyle = overlayData.dateColor;
         ctx.globalAlpha = 0.9;
         ctx.fillText(dateText, 0, 0);
-        ctx.fillText(dateText, 0, 0); // Double draw to give substance under the glow
       }
       ctx.restore();
     }
