@@ -164,6 +164,7 @@ body.light-mode .header {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
+  line-height: 1.6;
 }
 
 .logo svg {
@@ -189,7 +190,7 @@ body.light-mode .logo svg {
 .logo-box {
   border: none;
   border-radius: 0;
-  padding: 3px 12px;
+  padding: 2px 18px 4px;
   position: relative;
 }
 
@@ -206,11 +207,11 @@ body.light-mode .logo svg {
   border: 1.5px solid currentColor;
   border-radius: 2px;
   -webkit-mask-image:
-    linear-gradient(to right, black 42%, transparent 42%, transparent 58%, black 58%),
+    linear-gradient(to right, black 46%, transparent 46%, transparent 54%, black 54%),
     linear-gradient(to bottom, black 38%, transparent 38%, transparent 62%, black 62%);
   -webkit-mask-composite: source-in;
   mask-image:
-    linear-gradient(to right, black 42%, transparent 42%, transparent 58%, black 58%),
+    linear-gradient(to right, black 46%, transparent 46%, transparent 54%, black 54%),
     linear-gradient(to bottom, black 38%, transparent 38%, transparent 62%, black 62%);
   mask-composite: intersect;
 }
