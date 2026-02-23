@@ -124,7 +124,7 @@
     datePos: 'bottom-right',
     dateDir: 'horizontal',
     dateColor: '#ffffff',
-    dateStyle: 'normal',
+    dateStyle: 'retro1',
     
     note: '',
     notePos: 'bottom-left',
@@ -138,8 +138,47 @@
     noteScale: 1.0,
     showEditorUI: false,
     dateEnable: false,
-    noteEnable: false
+    noteEnable: false,
   };
+
+  /**
+   * Helper to get default date string based on style
+   * @param {string} style 'retro1', 'retro2', 'retro3'
+   * @returns {string} 
+   */
+  function getDefaultDateText(style) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+
+    if (style === 'retro3') {
+      // 레트로 3 (Digital): 2025. 2. 15
+      return `${year}. ${month}. ${day}`;
+    } else {
+      // 레트로 1, 2 (Film/Dot): '25 2 15
+      const shortYear = String(year).slice(-2);
+      return `'${shortYear} ${month} ${day}`;
+    }
+  }
+
+  /**
+   * Helper to get default date color based on style
+   * @param {string} style 'retro1', 'retro2', 'retro3'
+   * @returns {string} 
+   */
+  function getDefaultDateColor(style) {
+    if (style === 'retro3') {
+      return '#ffffff'; // 레트로 3: 화이트
+    } else {
+      return '#ff8400'; // 레트로 1, 2: 오렌지 (#ff8400)
+    }
+  }
+
+  // Initialize Date Input with today's default
+  textOverlay.date = getDefaultDateText('retro1');
+  textOverlay.dateColor = getDefaultDateColor('retro1');
+  if (textDate) textDate.value = textOverlay.date;
 
   let noteInteraction = {
     type: null, // 'drag', 'resize'
@@ -518,7 +557,7 @@
     } else {
         // Reset text overlay if none exists
         textOverlay = {
-            date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
+            date: getDefaultDateText('retro1'), datePos: 'bottom-right', dateDir: 'horizontal', dateColor: getDefaultDateColor('retro1'), dateStyle: 'retro1',
             note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
             noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
         };
@@ -932,6 +971,14 @@
   dateEnable.addEventListener('change', () => {
     saveSnapshot('light');
     textOverlay.dateEnable = dateEnable.checked;
+    
+    // If enabled and empty, populate with default date
+    if (dateEnable.checked && !textDate.value) {
+        const defaultText = getDefaultDateText(textOverlay.dateStyle);
+        textDate.value = defaultText;
+        updateGlobalDateSetting('date', defaultText);
+    }
+    
     saveCurrentSettings();
     scheduleApply();
   });
@@ -1952,8 +1999,8 @@
       ctx.textAlign = textAlign;
       ctx.textBaseline = textBaseline;
 
-      if (overlayData.dateStyle === 'vintage') {
-        // Retro Digital Style: Noto Sans KR + Dark brown outline
+      if (overlayData.dateStyle === 'retro3') {
+        // 레트로 3 (구 디지털): Noto Sans KR + 외곽선
         const vintageSize = Math.round(baseFontSize * 0.9);
         ctx.font = `400 ${vintageSize}px 'Noto Sans KR', sans-serif`;
         if ('letterSpacing' in ctx) ctx.letterSpacing = `${0.02}em`;
@@ -1967,13 +2014,40 @@
         ctx.fillStyle = overlayData.dateColor; 
         ctx.globalAlpha = 1.0;
         ctx.fillText(dateText, 0, 0);
-        if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; // Reset
+        if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; 
       } else {
-        // Retro Film Style: Digital-7 Mono (Original Clean Look)
-        ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', monospace`;
+        // 레트로 1 (구 필름) & 레트로 2 (사진 도트)
+        // 레트로 1 (구 필름) & 레트로 2 (사진 도트)
+        if (overlayData.dateStyle === 'retro2') {
+            ctx.font = `700 ${baseFontSize * 1.0}px 'Doto', sans-serif`;
+            if ('letterSpacing' in ctx) ctx.letterSpacing = `${0.02}em`; // Reduced letter spacing for Retro 2
+        } else {
+            ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', 'Noto Sans KR', sans-serif`;
+            if ('letterSpacing' in ctx) ctx.letterSpacing = `${0.05}em`;
+        }
         ctx.fillStyle = overlayData.dateColor;
-        ctx.globalAlpha = 0.9;
+        
+        // 1. Core Halation (Broad soft glow) - Reduced
+        ctx.shadowColor = overlayData.dateColor;
+        ctx.shadowBlur = Math.max(1, 4 * scale);
+        ctx.globalAlpha = 0.4;
         ctx.fillText(dateText, 0, 0);
+        
+        // 2. Inner halation (Medium sharpness) - Reduced
+        ctx.shadowBlur = Math.max(0.5, 2 * scale);
+        ctx.globalAlpha = 0.5;
+        ctx.fillText(dateText, 0, 0);
+        
+        // 3. Sharp ink base
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1.0;
+        ctx.fillText(dateText, 0, 0);
+
+        // 4. Central light hot-spot (Bright core)
+        ctx.fillStyle = "#ffffff";
+        ctx.globalAlpha = 0.35;
+        ctx.fillText(dateText, 0, 0);
+        if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; 
       }
       ctx.restore();
     }
@@ -2249,7 +2323,18 @@
 
   dateStyle.querySelectorAll('.btn-option').forEach(btn => {
     btn.addEventListener('click', () => {
-      updateGlobalDateSetting('dateStyle', btn.dataset.style);
+      const newStyle = btn.dataset.style;
+      updateGlobalDateSetting('dateStyle', newStyle);
+      
+      // Automatically apply default format for the selected style
+      const defaultText = getDefaultDateText(newStyle);
+      textDate.value = defaultText;
+      updateGlobalDateSetting('date', defaultText);
+      
+      // Automatically apply default color for the selected style
+      const defaultColor = getDefaultDateColor(newStyle);
+      updateGlobalDateSetting('dateColor', defaultColor);
+      
       syncSidebarUI();
     });
   });
