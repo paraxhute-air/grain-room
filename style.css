@@ -227,17 +227,28 @@ body.light-mode .logo svg {
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text-primary);
-  font-family: inherit;
   font-size: 0.85rem;
   outline: none;
   transition: border-color 0.2s;
   margin-bottom: 8px;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
 }
 
 .text-input:focus {
   border-color: #ef4444;
   background: rgba(128, 128, 128, 0.12);
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+/* Override browser autofill (white background issue) */
+.text-input:-webkit-autofill,
+.text-input:-webkit-autofill:hover, 
+.text-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-card-hover) inset !important;
+  background-color: transparent !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .input-with-clear {
@@ -703,7 +714,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
 }
 
 .label-text {
@@ -712,8 +723,12 @@ body.light-mode .theme-toggle .sun { display: block; }
   font-weight: 400;
 }
 
+.sub-label {
+  margin-top: 14px;
+}
+
 .label-value {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   min-width: 28px;
@@ -778,7 +793,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   background: transparent;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
@@ -851,7 +866,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition);

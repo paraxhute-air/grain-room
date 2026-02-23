@@ -62,6 +62,25 @@
   const yellow = document.getElementById('yellow');
   const key = document.getElementById('key');
 
+  // Text overlay elements
+  const textDate = document.getElementById('textDate');
+  const textNote = document.getElementById('textNote');
+  const dateEnable = document.getElementById('dateEnable');
+  const noteEnable = document.getElementById('noteEnable');
+  const datePosition = document.getElementById('datePosition');
+  const dateDirection = document.getElementById('dateDirection');
+  const dateStyle = document.getElementById('dateStyle');
+  const notePosition = document.getElementById('notePosition');
+  const noteDirection = document.getElementById('noteDirection');
+  const textDateColor = document.getElementById('textDateColor');
+  const textNoteStyle = document.getElementById('textNoteStyle');
+  const textNoteFont = document.getElementById('textNoteFont');
+
+  // Frame elements
+  const frameEnable = document.getElementById('frameEnable');
+  const frameMargin = document.getElementById('frameMargin');
+  const frameStyle = document.getElementById('frameStyle');
+
   // Zoom controls
   const btnZoomIn = document.getElementById('btnZoomIn');
   const btnZoomOut = document.getElementById('btnZoomOut');
@@ -111,14 +130,15 @@
     notePos: 'bottom-left',
     noteDir: 'horizontal',
     noteStyle: 'white',
-    noteFont: 'Nanum Pen Script',
+    noteFont: 'Nanum Myeongjo',
     
     // Interactive state
     noteX: null, // Normalized 0-1
     noteY: null, // Normalized 0-1
     noteScale: 1.0,
     showEditorUI: false,
-    dateEnable: false
+    dateEnable: false,
+    noteEnable: false
   };
 
   let noteInteraction = {
@@ -137,10 +157,16 @@
   }
 
   // Preload fonts for canvas rendering
-  document.fonts.load("400 20px 'Digital-7 Mono'").catch(() => {});
-  document.fonts.load("400 20px 'Nanum Pen Script'").catch(() => {});
-  document.fonts.load("400 20px 'Nanum Myeongjo'").catch(() => {});
-  document.fonts.load("400 20px 'Noto Sans KR'").catch(() => {});
+  const preloadFonts = [
+    "400 20px 'Digital-7 Mono'",
+    "400 20px 'Gamja Flower'",
+    "400 20px 'Nanum Myeongjo'",
+    "400 20px 'Noto Sans KR'"
+  ];
+  preloadFonts.forEach(f => document.fonts.load(f).catch(() => {}));
+
+  // Ensure Note input also has a default font set early
+  if (textNote) textNote.style.fontFamily = "'Nanum Pen Script', sans-serif";
 
   // Default settings for a new image
   const DEFAULT_SETTINGS = {
@@ -416,7 +442,7 @@
       textOverlay = { 
           date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
           note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
-          noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+          noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
       };
       return;
     }
@@ -445,7 +471,7 @@
          textOverlay = { 
           date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
           note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
-          noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+          noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
         };
     }
     
@@ -453,6 +479,8 @@
     textDate.value = textOverlay.date || '';
     textNote.value = textOverlay.note || '';
     if (dateEnable) dateEnable.checked = textOverlay.dateEnable !== false;
+    const noteEnable = document.getElementById('noteEnable');
+    if (noteEnable) noteEnable.checked = textOverlay.noteEnable !== false;
     syncSidebarUI();
     
     renderGallery();
@@ -492,13 +520,15 @@
         textOverlay = {
             date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
             note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
-            noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+            noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
         };
     }
     // Sync UI inputs
     textDate.value = textOverlay.date || '';
     textNote.value = textOverlay.note || '';
     if (dateEnable) dateEnable.checked = textOverlay.dateEnable !== false;
+    const noteEnable = document.getElementById('noteEnable');
+    if (noteEnable) noteEnable.checked = textOverlay.noteEnable !== false;
     syncSidebarUI(); 
 
     // Stop cropping if active
@@ -899,7 +929,6 @@
   }
   loadFrameAssets();
 
-  const dateEnable = document.getElementById('dateEnable');
   dateEnable.addEventListener('change', () => {
     saveSnapshot('light');
     textOverlay.dateEnable = dateEnable.checked;
@@ -907,7 +936,6 @@
     scheduleApply();
   });
 
-  const frameEnable = document.getElementById('frameEnable');
   frameEnable.addEventListener('change', () => {
     if (currentIndex === -1) return;
     saveSnapshot('light');
@@ -916,7 +944,13 @@
     scheduleApply();
   });
 
-  const frameStyle = document.getElementById('frameStyle');
+  noteEnable.addEventListener('change', () => {
+    saveSnapshot('light');
+    textOverlay.noteEnable = noteEnable.checked;
+    saveCurrentSettings();
+    scheduleApply();
+  });
+
   frameStyle.querySelectorAll('.btn-option').forEach(btn => {
     btn.addEventListener('click', () => {
       saveSnapshot('light');
@@ -929,7 +963,6 @@
     });
   });
 
-  const frameMargin = document.getElementById('frameMargin');
   frameMargin.querySelectorAll('.btn-option').forEach(btn => {
     btn.addEventListener('click', () => {
       if (currentIndex === -1) return;
@@ -1607,8 +1640,8 @@
     // If imgData.textOverlay is missing, we should use default or empty.
     const tOverlay = currentIndex === index ? textOverlay : (imgData.textOverlay || {
             date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
-            note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
-            noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
+          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+          noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
     });
     
     // Force showEditorUI false for export
@@ -1892,7 +1925,7 @@
     ctx.save();
     const scale = Math.max(w, h) / 1200;
     const baseFontSize = Math.round(38 * scale); // Adjusted to 38
-    const margin = Math.round(30 * scale);
+    const margin = Math.round(45 * scale);
 
     // 1. Draw Date
     if (dateText && overlayData.dateEnable !== false) {
@@ -1920,9 +1953,10 @@
       ctx.textBaseline = textBaseline;
 
       if (overlayData.dateStyle === 'vintage') {
-        // Retro Digital Style: Noto Sans KR + Dark brown outline + Tight spacing
-        ctx.font = `400 ${baseFontSize}px 'Noto Sans KR', sans-serif`;
-        if ('letterSpacing' in ctx) ctx.letterSpacing = `${-0.08}em`;
+        // Retro Digital Style: Noto Sans KR + Dark brown outline
+        const vintageSize = Math.round(baseFontSize * 0.9);
+        ctx.font = `400 ${vintageSize}px 'Noto Sans KR', sans-serif`;
+        if ('letterSpacing' in ctx) ctx.letterSpacing = `${0.02}em`;
         
         ctx.strokeStyle = '#3e2723'; 
         ctx.lineWidth = Math.max(1, 3 * scale);
@@ -1935,7 +1969,7 @@
         ctx.fillText(dateText, 0, 0);
         if ('letterSpacing' in ctx) ctx.letterSpacing = '0px'; // Reset
       } else {
-        // Retro Film Style: Digital-7 Mono (Original Look)
+        // Retro Film Style: Digital-7 Mono (Original Clean Look)
         ctx.font = `italic 400 ${baseFontSize}px 'Digital-7 Mono', monospace`;
         ctx.fillStyle = overlayData.dateColor;
         ctx.globalAlpha = 0.9;
@@ -1945,18 +1979,19 @@
     }
 
     // 2. Draw Note
-    if (noteText) {
+    if (noteText && overlayData.noteEnable !== false) {
       ctx.save();
       const style = overlayData.noteStyle;
       const font = overlayData.noteFont;
       
       // Font-specific scaling factors to normalize visual size
       let fontFactor = 1.0;
-      if (font === 'Nanum Myeongjo') fontFactor = 0.72;
-      else if (font === 'Noto Sans KR') fontFactor = 0.75;
+      if (font === 'Nanum Myeongjo') fontFactor = 0.82;
+      else if (font === 'Noto Sans KR') fontFactor = 0.85;
+      else if (font === 'Gamja Flower') fontFactor = 1.15;
       
       const noteScale = (overlayData.noteScale || 1.0) * fontFactor;
-      const fontSize = Math.round(baseFontSize * noteScale);
+      const fontSize = Math.round(baseFontSize * noteScale * 1.1); // Added 1.1x global note boost
       
       let x, y, textAlign, textBaseline;
       
@@ -1982,7 +2017,13 @@
         // Recalculate alignment for vertical if needed, but for manual center/middle it's fine
       }
 
-      ctx.font = `400 ${fontSize}px '${font}', sans-serif`;
+      // Ensure font is ready before setting to avoid flickering fallback
+      const fontString = `400 ${fontSize}px "${font}"`;
+      ctx.font = fontString;
+      
+      // If the browser hasn't actually switched to our font yet, it might still be using the default.
+      // We can check if it's already in the cache.
+      ctx.font = `${fontString}, sans-serif`;
       ctx.textAlign = textAlign;
       ctx.textBaseline = textBaseline;
 
@@ -2117,16 +2158,6 @@
   }
 
   // ===== Text Overlay Event Listeners =====
-  const textDate = document.getElementById('textDate');
-  const textNote = document.getElementById('textNote');
-  const datePosition = document.getElementById('datePosition');
-  const dateDirection = document.getElementById('dateDirection');
-  const dateStyle = document.getElementById('dateStyle');
-  const notePosition = document.getElementById('notePosition');
-  const noteDirection = document.getElementById('noteDirection');
-  const textDateColor = document.getElementById('textDateColor');
-  const textNoteStyle = document.getElementById('textNoteStyle');
-  const textNoteFont = document.getElementById('textNoteFont');
 
   // ===== UI Synchronization =====
   function syncSidebarUI() {
@@ -2138,10 +2169,19 @@
     if (dateEnable) dateEnable.checked = textOverlay.dateEnable !== false;
     
     // Sync Note Settings
+    const noteEnable = document.getElementById('noteEnable');
+    if (noteEnable) noteEnable.checked = textOverlay.noteEnable !== false;
     syncButtonGroup(notePosition, textOverlay.notePos);
     syncButtonGroup(noteDirection, textOverlay.noteDir);
     syncButtonGroup(textNoteStyle, textOverlay.noteStyle);
     syncButtonGroup(textNoteFont, textOverlay.noteFont);
+
+    // Always use consistent default font for inputs to avoid typing flickering
+    textNote.style.fontFamily = "'Inter', -apple-system, sans-serif";
+    textNote.style.fontWeight = "400";
+    
+    textDate.style.fontFamily = "'Inter', -apple-system, sans-serif";
+    textDate.style.fontWeight = "400";
 
     // Sync Frame Settings
     const frameGroup = document.getElementById('frameStyle');

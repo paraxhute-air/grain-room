@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=block" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -373,6 +373,7 @@
               </span>
               <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </h3>
+            <!-- Group 1: Content & Toggle -->
             <div class="control-group">
               <div class="toggle-row" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                 <span class="label-text">날짜스탬프 표시</span>
@@ -382,10 +383,14 @@
                 </label>
               </div>
               <div class="input-with-clear">
-                <input type="text" id="textDate" class="text-input" placeholder="2025.01.01" maxlength="20">
+                <input type="text" id="textDate" class="text-input" placeholder="2025.01.01" maxlength="20" autocomplete="off">
                 <button id="btnClearDate" class="btn-clear" title="날짜 지우기">&times;</button>
               </div>
-              <label><span>위치</span></label>
+            </div>
+
+            <!-- Group 2: Layout & Appearance Styles -->
+            <div class="control-group">
+              <label><span class="label-text">위치</span></label>
               <div class="btn-group" id="datePosition">
                 <button class="btn-option active" data-pos="top-left">좌상</button>
                 <button class="btn-option" data-pos="top-right">우상</button>
@@ -393,19 +398,19 @@
                 <button class="btn-option active" data-pos="bottom-right">우하</button>
               </div>
               
-              <label><span>방향</span></label>
+              <label class="sub-label"><span class="label-text">방향</span></label>
               <div class="btn-group" id="dateDirection">
                 <button class="btn-option active" data-dir="horizontal">가로</button>
                 <button class="btn-option" data-dir="vertical">세로</button>
               </div>
 
-              <label><span>날짜 스타일</span></label>
+              <label class="sub-label"><span class="label-text">날짜 스타일</span></label>
               <div class="btn-group" id="dateStyle">
                 <button class="btn-option active" data-style="normal">레트로 필름</button>
                 <button class="btn-option" data-style="vintage">레트로 디지털</button>
               </div>
               
-              <label><span>날짜 색상</span></label>
+              <label class="sub-label"><span class="label-text">날짜 색상</span></label>
               <div class="btn-group" id="textDateColor">
                 <button class="btn-option active" data-color="#ffffff">화이트</button>
                 <button class="btn-option" data-color="#facb7c">옐로우</button>
@@ -423,13 +428,24 @@
               </span>
               <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </h3>
+            <!-- Group 1: Content & Toggle -->
             <div class="control-group">
+              <div class="toggle-row" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span class="label-text">노트 표시</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="noteEnable">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
               <div class="input-with-clear">
-                <input type="text" id="textNote" class="text-input" placeholder="메모를 입력하세요 (최대 20자)" maxlength="20">
+                <input type="text" id="textNote" class="text-input" placeholder="메모를 입력하세요 (최대 20자)" maxlength="20" autocomplete="off">
                 <button id="btnClearNote" class="btn-clear" title="노트 지우기">&times;</button>
               </div>
-              
-              <label><span>위치</span></label>
+            </div>
+
+            <!-- Group 2: Layout & Appearance Styles -->
+            <div class="control-group">
+              <label><span class="label-text">위치</span></label>
               <div class="btn-group" id="notePosition">
                 <button class="btn-option active" data-pos="top-left">좌상</button>
                 <button class="btn-option" data-pos="top-right">우상</button>
@@ -437,24 +453,24 @@
                 <button class="btn-option" data-pos="bottom-right">우하</button>
               </div>
               
-              <label><span>방향</span></label>
+              <label class="sub-label"><span class="label-text">방향</span></label>
               <div class="btn-group" id="noteDirection">
                 <button class="btn-option active" data-dir="horizontal">가로</button>
                 <button class="btn-option" data-dir="vertical">세로</button>
               </div>
 
-              <label><span>노트 스타일</span></label>
+              <label class="sub-label"><span class="label-text">노트 스타일</span></label>
               <div class="btn-group" id="textNoteStyle">
                 <button class="btn-option active" data-style="white">화이트</button>
                 <button class="btn-option" data-style="black">블랙</button>
                 <button class="btn-option" data-style="label">라벨</button>
               </div>
               
-              <label><span>노트 폰트</span></label>
+              <label class="sub-label"><span class="label-text">노트 폰트</span></label>
               <div class="btn-group" id="textNoteFont">
-                <button class="btn-option active" data-font="Nanum Pen Script">A</button>
-                <button class="btn-option" data-font="Nanum Myeongjo">B</button>
-                <button class="btn-option" data-font="Noto Sans KR">C</button>
+                <button class="btn-option active" data-font="Nanum Myeongjo">A</button>
+                <button class="btn-option" data-font="Noto Sans KR">B</button>
+                <button class="btn-option" data-font="Gamja Flower">C</button>
               </div>
             </div>
           </div>
