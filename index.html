@@ -146,9 +146,9 @@
           <div class="control-group" id="qualityGroup">
             <label>
               <span class="label-text">품질</span>
-              <span class="label-value" id="qualityVal">85</span>
+              <span class="label-value" id="qualityVal">90</span>
             </label>
-            <input type="range" id="downloadQuality" min="10" max="100" value="85" step="5" class="slider">
+            <input type="range" id="downloadQuality" min="10" max="100" value="90" step="10" class="slider">
             <div class="quality-hints">
               <span>낮음 (작은 파일)</span>
               <span>높음 (큰 파일)</span>
@@ -524,9 +524,17 @@
               </button>
             </div>
           </div>
-          </div>
         </div>
+
       </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Nav & Overlay (Moved outside editor for reliable z-index and fixed positioning) -->
+  <div class="mobile-sheet-overlay" id="mobileOverlay"></div>
+  <div class="mobile-nav-container hidden" id="mobileNav">
+    <div class="mobile-nav-scroll" id="navScroll">
+      <!-- 탭은 자바스크립트로 동적 생성됨 -->
     </div>
   </div>
 

@@ -353,10 +353,12 @@
     const firstNewIndex = images.length;
     images = [...images, ...newImages];
 
-    // Show editor
+    // Show editor and mobile nav
     dropZone.classList.add('hidden');
     editor.classList.remove('hidden');
     document.getElementById('imageGallery').classList.remove('hidden');
+    const mobileNav = document.getElementById('mobileNav');
+    if (mobileNav) mobileNav.classList.remove('hidden');
 
     // Update Gallery UI
     renderGallery();
@@ -477,6 +479,8 @@
       currentIndex = -1;
       editor.classList.add('hidden');
       dropZone.classList.remove('hidden');
+      const mobileNav = document.getElementById('mobileNav');
+      if (mobileNav) mobileNav.classList.add('hidden');
       // Reset global textOverlay state to default
       textOverlay = { 
           date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
@@ -1885,7 +1889,7 @@
       dst[i] = Math.min(255, Math.max(0, r));
       dst[i + 1] = Math.min(255, Math.max(0, g));
       dst[i + 2] = Math.min(255, Math.max(0, b));
-      dst[i + 3] = 255;
+      dst[i + 3] = srcData[i + 3]; // 투명도 유지
     }
 
     // 7. Grain
@@ -2040,7 +2044,7 @@
         
         // 3. Sharp ink base
         ctx.shadowBlur = 0;
-        ctx.globalAlpha = 0.41
+        ctx.globalAlpha = 1.0;
         ctx.fillText(dateText, 0, 0);
 
         // 4. Central light hot-spot (Bright core)
@@ -2449,5 +2453,119 @@
       }, 300);
     }, 3000);
   }
+
+  // ===== Mobile Navigation & Bottom Sheet =====
+  function initMobileNav() {
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const navScroll = document.getElementById('navScroll');
+    const controlsSidebar = document.querySelector('.controls-sidebar');
+    const controlSections = Array.from(document.querySelectorAll('.control-section'));
+
+    if (!navScroll || !mobileOverlay || !controlsSidebar) return;
+
+    // 1. 동적으로 탭(버튼) 생성
+    controlSections.forEach((section, index) => {
+      const titleSpan = section.querySelector('.title-content');
+      if (!titleSpan) return;
+
+      const tab = document.createElement('div');
+      tab.className = 'mobile-nav-item';
+      tab.innerHTML = titleSpan.innerHTML;
+
+      tab.addEventListener('click', () => {
+        openMobileSection(index, tab);
+      });
+
+      navScroll.appendChild(tab);
+    });
+
+    const navItems = Array.from(document.querySelectorAll('.mobile-nav-item'));
+
+    function openMobileSection(index, tabElem) {
+      if (window.innerWidth > 768) return; // PC에서는 무시
+
+      // 이미 열려 있는 탭을 다시 누르면 닫기
+      if (tabElem.classList.contains('active')) {
+        closeMobileNav();
+        return;
+      }
+
+      // 탭 초기화
+      navItems.forEach(el => el.classList.remove('active'));
+      controlSections.forEach(sec => sec.classList.remove('active'));
+
+      // 클릭한 탭 및 매칭되는 섹션 활성화
+      tabElem.classList.add('active');
+      controlSections[index].classList.add('active');
+      controlSections[index].classList.remove('collapsed'); // PC 패널 스크립트가 숨겨둔 경우 해제
+
+      // 오버레이 및 바텀 시트 올리기
+      mobileOverlay.classList.add('active');
+      controlsSidebar.classList.add('active');
+
+      // 탭이 잘 보이도록 스크롤 이동
+      tabElem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
+    function closeMobileNav() {
+      if (window.innerWidth > 768) return;
+      mobileOverlay.classList.remove('active');
+      controlsSidebar.classList.remove('active');
+      navItems.forEach(el => el.classList.remove('active'));
+      // Wait for animation before removing active from sections to prevent glitching
+      setTimeout(() => {
+        if (!controlsSidebar.classList.contains('active')) {
+          controlSections.forEach(sec => sec.classList.remove('active'));
+        }
+      }, 300);
+    }
+
+    // 2. 바깥 배경 누르면 닫기
+    mobileOverlay.addEventListener('click', closeMobileNav);
+
+    // 3. 바텀 시트 핸들 드래그(스와이프 다운)로 닫기
+    let startY = 0;
+    controlsSidebar.addEventListener('touchstart', (e) => {
+      // 내부에 스크롤해야하는 요소(slider, button 등) 누른거면 무시
+      if (e.target.closest('.slider, button, input, select')) return;
+      // 시트 맨 상단(핸들 근처)에서만 드래그 허용
+      const topOffset = controlsSidebar.getBoundingClientRect().top;
+      if (e.touches[0].clientY - topOffset > 50) return;
+      startY = e.touches[0].clientY;
+    });
+
+    controlsSidebar.addEventListener('touchmove', (e) => {
+      if (!startY) return;
+      const currentY = e.touches[0].clientY;
+      if (currentY - startY > 60) { // 60px 이상 내렸을 때
+        closeMobileNav();
+        startY = 0;
+      }
+    });
+
+    controlsSidebar.addEventListener('touchend', () => {
+      startY = 0; // 드래그 초기화
+    });
+
+    // (Arrow scrolling removed based on user request)
+
+    // 5. 화면 크기 변경 대처 (데스크톱으로 돌아갈 때 초기화)
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        mobileOverlay.classList.remove('active');
+        controlsSidebar.classList.remove('active');
+        controlSections.forEach(sec => sec.classList.add('active')); // PC는 모두 보임
+      } else {
+        // 모바일인데 활성화된 탭이 없다면 모두 숨김
+        const hasActive = document.querySelector('.mobile-nav-item.active');
+        if (!hasActive) {
+          controlSections.forEach(sec => sec.classList.remove('active'));
+        }
+      }
+    });
+  }
+
+  // 페이지 로드 시 네비게이션 초기화
+  initMobileNav();
 
 })();
