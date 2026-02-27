@@ -1182,7 +1182,7 @@ body.light-mode .theme-toggle .sun { display: block; }
 
 @media (max-width: 600px) {
   .app {
-    padding: 12px 16px;
+    padding: 0;
   }
 
   .header {
@@ -1289,7 +1289,15 @@ body.light-mode .theme-toggle .sun { display: block; }
 @media (max-width: 768px) {
   .app {
     height: 100dvh; /* Dynamic viewport height */
+    padding: 0;
     --thumb-height: 60px; /* Default mobile thumb height */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .editor {
+    padding: 0;
+    justify-content: flex-start;
   }
 
   /* Header adjustments */
@@ -1328,6 +1336,16 @@ body.light-mode .theme-toggle .sun { display: block; }
     border: none;
     border-radius: 0;
     max-height: none; /* Let flex handle it */
+    flex: 1;
+    min-height: 0;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  .canvas-wrapper canvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
   }
 
   .resizer {
@@ -1403,7 +1421,8 @@ body.light-mode .theme-toggle .sun { display: block; }
   /* Drop Zone */
   .drop-zone {
     min-height: 250px;
-    margin: 20px;
+    margin: auto;
+    width: calc(100% - 40px);
   }
   
   .drop-icon svg {

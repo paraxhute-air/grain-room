@@ -2040,7 +2040,7 @@
         
         // 3. Sharp ink base
         ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1.0;
+        ctx.globalAlpha = 0.41
         ctx.fillText(dateText, 0, 0);
 
         // 4. Central light hot-spot (Bright core)
