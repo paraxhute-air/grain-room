@@ -134,6 +134,44 @@ body.light-mode .header {
   gap: 16px;
 }
 
+/* ===== Footer (PC) ===== */
+.pc-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 50;
+  
+  /* Match Header Variables for Dark Mode (Default) */
+  --bg-primary: #e8e8ee;
+  --border: rgba(0, 0, 0, 0.10);
+  --text-muted: #50506a;
+
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 400;
+  padding: 4px 24px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+body.light-mode .pc-footer {
+  /* Match Header Variables for Light Mode */
+  --bg-primary: #1a1a24;
+  --border: rgba(255, 255, 255, 0.10);
+  --text-muted: #a0a0b4;
+  
+  background: var(--bg-primary);
+  color: var(--text-muted);
+}
+
+.pc-footer .footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
 /* ===== Resizer ===== */
 .resizer {
   height: 2px;
@@ -1319,6 +1357,10 @@ body.light-mode .theme-toggle .sun { display: block; }
   }
   
   .tagline {
+    display: none;
+  }
+  
+  .pc-footer {
     display: none;
   }
 
