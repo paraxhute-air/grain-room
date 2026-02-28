@@ -117,8 +117,8 @@
               새 이미지
             </button>
             <button id="btnDownloadOpen" class="btn btn-primary" title="다운로드">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              다운로드
+              <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+              <span class="text">다운로드</span>
             </button>
           </div>
           <div id="galleryResizer" class="resizer"></div>
@@ -160,12 +160,12 @@
         </div>
         <div class="modal-footer" style="display: flex; flex-direction: column; gap: 8px;">
           <button id="btnDownloadConfirm" class="btn btn-primary btn-full">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            현재 이미지 다운로드
+            <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+            <span class="text">현재 이미지 다운로드</span>
           </button>
-          <div style="width: 100%; height: 1px; background: var(--border); margin: 8px 0;"></div>
+          <div id="downloadBatchDivider" style="width: 100%; height: 1px; background: var(--border); margin: 8px 0;"></div>
           
-          <div style="display: flex; gap: 8px;">
+          <div id="downloadBatchGrp" style="display: flex; gap: 8px;">
             <button id="btnDownloadAll" class="btn btn-ghost" style="border: 1px solid var(--border); flex: 1; font-size: 13px;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               전체 (한장씩)

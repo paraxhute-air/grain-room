@@ -1573,6 +1573,32 @@
     const exportOverlay = { ...textOverlay, showEditorUI: false };
     renderImageToContext(ectx, images[currentIndex], exportCanvas.width, exportCanvas.height, true, exportOverlay);
 
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.share) {
+      exportCanvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const fileName = getExportFileName(currentIndex, ext);
+        const file = new File([blob], fileName, { type: blob.type });
+        try {
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Grain Room Image'
+            });
+            downloadModal.classList.add('hidden');
+          } else {
+            const dataUrl = URL.createObjectURL(blob);
+            downloadURI(dataUrl, fileName);
+            setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
+            downloadModal.classList.add('hidden');
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') console.error('Share failed:', err);
+        }
+      }, mimeType, quality);
+      return;
+    }
+
     const dataUrl = exportCanvas.toDataURL(mimeType, quality);
     const fileName = getExportFileName(currentIndex, ext);
     downloadURI(dataUrl, fileName);
@@ -2567,5 +2593,30 @@
 
   // 페이지 로드 시 네비게이션 초기화
   initMobileNav();
+
+  function initMobileDownloadUI() {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) return;
+
+    // Change main button
+    const btnOpenText = document.querySelector('#btnDownloadOpen .text');
+    const btnOpenIcon = document.querySelector('#btnDownloadOpen .icon');
+    if (btnOpenText) btnOpenText.textContent = '저장/공유';
+    if (btnOpenIcon) btnOpenIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+    
+    // Change modal confirm button
+    const btnConfirmText = document.querySelector('#btnDownloadConfirm .text');
+    const btnConfirmIcon = document.querySelector('#btnDownloadConfirm .icon');
+    if (btnConfirmText) btnConfirmText.textContent = '현재 이미지 저장/공유';
+    if (btnConfirmIcon) btnConfirmIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+
+    // Hide batch download group in mobile
+    const divider = document.getElementById('downloadBatchDivider');
+    const grp = document.getElementById('downloadBatchGrp');
+    if (divider) divider.style.display = 'none';
+    if (grp) grp.style.display = 'none';
+  }
+  
+  initMobileDownloadUI();
 
 })();
