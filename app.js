@@ -1583,7 +1583,7 @@
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
-              title: '여기에 원하시는 문구를 입력하세요' // 공유 시 같이 전송될 문구
+              text: 'enhanced by grain room.' // 공유 시 같이 전송될 텍스트 (카카오톡 등에서 표시됨)
             });
             downloadModal.classList.add('hidden');
           } else {
