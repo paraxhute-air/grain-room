@@ -23,7 +23,7 @@
         </div>
         <div class="header-right">
           <p class="tagline">간편하게 필름 감성을 더하세요</p>
-          <button id="btnThemeToggle" class="btn-icon theme-toggle" title="테마 변경">
+          <button id="btnThemeToggle" class="btn-icon theme-toggle" title="테마 변경" aria-label="라이트 또는 다크 테마 변경">
             <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
             <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           </button>
@@ -100,11 +100,11 @@
               회전
             </button>
             <div class="btn-group zoom-controls">
-              <button id="btnZoomOut" class="btn-option" title="축소">
+              <button id="btnZoomOut" class="btn-option" title="축소" aria-label="이미지 축소">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
-              <button id="btnZoomReset" class="btn-option" title="100%">100%</button>
-              <button id="btnZoomIn" class="btn-option" title="확대">
+              <button id="btnZoomReset" class="btn-option" title="100%" aria-label="확대 비율 입력">100%</button>
+              <button id="btnZoomIn" class="btn-option" title="확대" aria-label="이미지 확대">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </div>
@@ -133,7 +133,7 @@
       <div class="modal">
         <div class="modal-header">
           <h3>이미지 다운로드</h3>
-          <button id="modalClose" class="modal-close">&times;</button>
+          <button id="modalClose" class="modal-close" aria-label="다운로드 창 닫기">&times;</button>
         </div>
         <div class="modal-body">
           <div class="control-group">
@@ -338,7 +338,7 @@
               <div class="toggle-row" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                 <span class="label-text">프레임 적용</span>
                 <label class="toggle-switch">
-                  <input type="checkbox" id="frameEnable">
+                  <input type="checkbox" id="frameEnable" aria-label="프레임 적용">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
@@ -378,13 +378,13 @@
               <div class="toggle-row" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                 <span class="label-text">날짜스탬프 표시</span>
                 <label class="toggle-switch">
-                  <input type="checkbox" id="dateEnable">
+                  <input type="checkbox" id="dateEnable" aria-label="날짜 스탬프 표시">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
               <div class="input-with-clear">
                 <input type="text" id="textDate" class="text-input" placeholder="2025.01.01" maxlength="20" autocomplete="off">
-                <button id="btnClearDate" class="btn-clear" title="날짜 지우기">&times;</button>
+                <button id="btnClearDate" class="btn-clear" title="날짜 지우기" aria-label="날짜 지우기">&times;</button>
               </div>
             </div>
 
@@ -434,13 +434,13 @@
               <div class="toggle-row" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                 <span class="label-text">노트 표시</span>
                 <label class="toggle-switch">
-                  <input type="checkbox" id="noteEnable">
+                  <input type="checkbox" id="noteEnable" aria-label="노트 표시">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
               <div class="input-with-clear">
                 <input type="text" id="textNote" class="text-input" placeholder="메모를 입력하세요 (최대 20자)" maxlength="20" autocomplete="off">
-                <button id="btnClearNote" class="btn-clear" title="노트 지우기">&times;</button>
+                <button id="btnClearNote" class="btn-clear" title="노트 지우기" aria-label="노트 지우기">&times;</button>
               </div>
             </div>
 

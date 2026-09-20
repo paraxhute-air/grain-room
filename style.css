@@ -62,6 +62,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Keep keyboard navigation visible without changing pointer interactions. */
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #fca5a5;
+  outline-offset: 3px;
+}
+
 /* ===== Background Ambience ===== */
 body::before {
   content: '';
@@ -865,6 +873,8 @@ body.light-mode .theme-toggle .sun { display: block; }
 .btn-option.active {
   background: #dc2626;
   color: #ffffff;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+  font-weight: 700;
 }
 
 
@@ -923,6 +933,8 @@ body.light-mode .theme-toggle .sun { display: block; }
   border-color: var(--accent-primary);
   background: rgba(167, 139, 250, 0.1);
   color: var(--accent-primary);
+  box-shadow: inset 0 0 0 2px currentColor;
+  font-weight: 700;
 }
 
 .preset-preview {

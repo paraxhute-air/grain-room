@@ -116,7 +116,13 @@
   let isDraggingRect = false;
   let dragOffset = { x: 0, y: 0 };
   let isBypassMode = false;
-  const MAX_HISTORY = 20;
+  const MAX_HISTORY = 10;
+  const MAX_IMAGE_COUNT = 20;
+  const MAX_IMAGE_SIZE = 2048;
+  const DB_NAME = 'grain-room-db';
+  const DB_VERSION = 1;
+  const IMAGE_STORE = 'images';
+  let persistTimer = null;
 
   // Text overlay state
   let textOverlay = {
@@ -217,6 +223,94 @@
     frameEnable: false,
     frameMargin: 'small'
   };
+
+  // ===== Local Project Storage (IndexedDB) =====
+  function openProjectDB() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) {
+        reject(new Error('IndexedDB is not supported in this browser.'));
+        return;
+      }
+
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(IMAGE_STORE)) {
+          db.createObjectStore(IMAGE_STORE, { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  function dbRequest(mode, operation) {
+    return openProjectDB().then((db) => new Promise((resolve, reject) => {
+      const transaction = db.transaction(IMAGE_STORE, mode);
+      const store = transaction.objectStore(IMAGE_STORE);
+      let result;
+
+      try {
+        result = operation(store);
+      } catch (error) {
+        db.close();
+        reject(error);
+        return;
+      }
+
+      transaction.oncomplete = () => {
+        db.close();
+        resolve(result && result.result);
+      };
+      transaction.onerror = () => {
+        db.close();
+        reject(transaction.error);
+      };
+    }));
+  }
+
+  function getPersistedImageData(imgData) {
+    return {
+      id: imgData.id,
+      name: imgData.name || 'grain-room-image',
+      blob: imgData.sourceBlob,
+      settings: JSON.parse(JSON.stringify(imgData.settings)),
+      textOverlay: JSON.parse(JSON.stringify(imgData.textOverlay)),
+      updatedAt: Date.now()
+    };
+  }
+
+  function persistImage(imgData) {
+    if (!imgData || !imgData.sourceBlob) return Promise.resolve();
+    return dbRequest('readwrite', (store) => store.put(getPersistedImageData(imgData)));
+  }
+
+  function schedulePersistCurrentImage() {
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => {
+      if (currentIndex === -1) return;
+      persistImage(images[currentIndex]).catch((error) => {
+        console.warn('작업 내용을 로컬에 저장하지 못했습니다.', error);
+      });
+    }, 400);
+  }
+
+  function schedulePersistAllImages() {
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => {
+      Promise.all(images.map(persistImage)).catch((error) => {
+        console.warn('작업 내용을 로컬에 저장하지 못했습니다.', error);
+      });
+    }, 400);
+  }
+
+  function deletePersistedImage(id) {
+    return dbRequest('readwrite', (store) => store.delete(id));
+  }
+
+  function getPersistedImages() {
+    return dbRequest('readonly', (store) => store.getAll());
+  }
 
   // ===== Presets =====
   const PRESETS = {
@@ -340,9 +434,23 @@
 
   // ===== Load Images =====
   async function loadImages(files) {
+    const supported = ['image/png', 'image/jpeg', 'image/webp'];
+    const validFiles = Array.from(files).filter((file) => supported.includes(file.type));
+    const availableSlots = MAX_IMAGE_COUNT - images.length;
+
+    if (availableSlots <= 0) {
+      showToast(`이미지는 한 번에 최대 ${MAX_IMAGE_COUNT}장까지 편집할 수 있습니다.`);
+      return;
+    }
+
+    const filesToLoad = validFiles.slice(0, availableSlots);
+    if (filesToLoad.length < validFiles.length) {
+      showToast(`최대 ${MAX_IMAGE_COUNT}장까지 추가할 수 있어 ${filesToLoad.length}장만 불러왔습니다.`);
+    }
+
     const newImages = [];
 
-    for (const file of files) {
+    for (const file of filesToLoad) {
       const imgData = await processFile(file);
       if (imgData) newImages.push(imgData);
     }
@@ -362,6 +470,9 @@
 
     // Update Gallery UI
     renderGallery();
+    Promise.all(newImages.map(persistImage)).catch((error) => {
+      console.warn('새 이미지를 로컬에 저장하지 못했습니다.', error);
+    });
 
     // Auto-scroll to the end of the gallery
     setTimeout(() => {
@@ -377,18 +488,17 @@
     }
   }
 
-  function processFile(file) {
+  function processFile(file, persisted = {}) {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          // Cap image to max 4096px
-          const MAX_SIZE = 4096;
+          // Keep all in-memory editing buffers within the configured safe limit.
           let w = img.width;
           let h = img.height;
-          if (w > MAX_SIZE || h > MAX_SIZE) {
-            const scale = MAX_SIZE / Math.max(w, h);
+          if (w > MAX_IMAGE_SIZE || h > MAX_IMAGE_SIZE) {
+            const scale = MAX_IMAGE_SIZE / Math.max(w, h);
             w = Math.round(w * scale);
             h = Math.round(h * scale);
           }
@@ -401,42 +511,79 @@
           octx.drawImage(img, 0, 0, w, h);
           const pixels = octx.getImageData(0, 0, w, h);
 
-          // 원본 비율 유지 썸네일 생성
-          const thumbH = 120;
-          const thumbW = Math.round((w / h) * thumbH);
-          const thumbCanvas = document.createElement('canvas');
-          thumbCanvas.width = thumbW;
-          thumbCanvas.height = thumbH;
-          const tctx = thumbCanvas.getContext('2d');
-          tctx.drawImage(img, 0, 0, thumbW, thumbH);
+          // Use a normalized image for every subsequent operation, including reset.
+          const normalizedImage = new Image();
+          normalizedImage.onload = () => {
+            const thumbH = 120;
+            const thumbW = Math.round((w / h) * thumbH);
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width = thumbW;
+            thumbCanvas.height = thumbH;
+            const tctx = thumbCanvas.getContext('2d');
+            tctx.drawImage(normalizedImage, 0, 0, thumbW, thumbH);
 
-          resolve({
-            id: Date.now() + Math.random(),
-            initialImage: img, // Store initial state for full reset
-            originalImage: img,
-            width: w,
-            height: h,
-            originalPixels: pixels, // Store pixels of the scaled original image
-            thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.7),
-            
-            // Settings
-            settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
-            
-            // 원본 백업 (초기화 시 자르기 복원용)
-            backupImage: img,
-            backupWidth: w,
-            backupHeight: h,
-            backupPixels: pixels,
-            // Undo 히스토리
-            history: [],
-            redoHistory: [],
-            textOverlay: JSON.parse(JSON.stringify(textOverlay)) // Default to current text state
-          });
+            resolve({
+              id: persisted.id || (window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
+              name: persisted.name || file.name || 'grain-room-image',
+              sourceBlob: file,
+              initialImage: normalizedImage,
+              originalImage: normalizedImage,
+              width: w,
+              height: h,
+              originalPixels: pixels,
+              thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.7),
+              settings: { ...DEFAULT_SETTINGS, ...(persisted.settings || {}) },
+              backupImage: normalizedImage,
+              backupWidth: w,
+              backupHeight: h,
+              backupPixels: pixels,
+              history: [],
+              redoHistory: [],
+              textOverlay: persisted.textOverlay
+                ? JSON.parse(JSON.stringify(persisted.textOverlay))
+                : JSON.parse(JSON.stringify(textOverlay))
+            });
+          };
+          normalizedImage.onerror = () => resolve(null);
+          normalizedImage.src = offCanvas.toDataURL();
         };
+        img.onerror = () => resolve(null);
         img.src = e.target.result;
       };
+      reader.onerror = () => resolve(null);
       reader.readAsDataURL(file);
     });
+  }
+
+  async function restorePersistedImages() {
+    try {
+      const records = await getPersistedImages();
+      const restoredRecords = records
+        .filter((record) => record.blob instanceof Blob)
+        .sort((a, b) => (a.updatedAt || 0) - (b.updatedAt || 0))
+        .slice(0, MAX_IMAGE_COUNT);
+
+      if (restoredRecords.length === 0) return;
+
+      const restoredImages = [];
+      for (const record of restoredRecords) {
+        const imgData = await processFile(record.blob, record);
+        if (imgData) restoredImages.push(imgData);
+      }
+      if (restoredImages.length === 0) return;
+
+      images = restoredImages;
+      dropZone.classList.add('hidden');
+      editor.classList.remove('hidden');
+      imageGallery.classList.remove('hidden');
+      const mobileNav = document.getElementById('mobileNav');
+      if (mobileNav) mobileNav.classList.remove('hidden');
+      renderGallery();
+      switchImage(0);
+      showToast(`${restoredImages.length}개의 저장된 이미지를 복원했습니다.`);
+    } catch (error) {
+      console.warn('저장된 작업을 복원하지 못했습니다.', error);
+    }
   }
 
   function renderGallery() {
@@ -448,7 +595,7 @@
       item.innerHTML = `
         <div class="thumb-img-box ${index === currentIndex ? 'active' : ''}">
           <img src="${img.thumbnail}" alt="Image ${index + 1}">
-          <button class="thumb-delete" onclick="event.stopPropagation(); window.deleteImage(${index});">×</button>
+          <button class="thumb-delete" aria-label="${index + 1}번 이미지 삭제" onclick="event.stopPropagation(); window.deleteImage(${index});">×</button>
         </div>
         <span class="thumb-id">${index + 1}</span>
       `;
@@ -473,6 +620,14 @@
 
   // 이미지 삭제 함수 (전역으로 노출)
   window.deleteImage = function(index) {
+    const removedImage = images[index];
+    if (!removedImage) return;
+
+    deletePersistedImage(removedImage.id).catch((error) => {
+      console.warn('삭제한 이미지를 로컬 저장소에서 정리하지 못했습니다.', error);
+    });
+    releaseImageResources(removedImage);
+
     if (images.length === 1) {
       // 마지막 이미지면 에디터 닫고 드롭존 표시
       images = [];
@@ -529,7 +684,20 @@
     renderGallery();
     updateZoom();
     scheduleApply();
+    schedulePersistCurrentImage();
   };
+
+  function releaseImageResources(imgData) {
+    imgData.originalPixels = null;
+    imgData.backupPixels = null;
+    imgData.originalImage = null;
+    imgData.initialImage = null;
+    imgData.backupImage = null;
+    imgData.thumbnail = null;
+    imgData.sourceBlob = null;
+    imgData.history = [];
+    imgData.redoHistory = [];
+  }
 
   function switchImage(index) {
     if (index === currentIndex) return;
@@ -609,6 +777,7 @@
     };
     // Save text state too
     images[currentIndex].textOverlay = JSON.parse(JSON.stringify(textOverlay));
+    schedulePersistCurrentImage();
   }
 
   function loadSettingsIntoUI(s) {
@@ -784,6 +953,7 @@
     renderGallery();
     updateZoom();
     scheduleApply();
+    schedulePersistCurrentImage();
   }
 
   btnUndo.addEventListener('click', undo);
@@ -846,6 +1016,7 @@
       renderGallery();
       updateZoom();
       scheduleApply();
+      schedulePersistCurrentImage();
       showToast('이미지가 반시계 방향으로 90도 회전되었습니다.');
     };
   }
@@ -928,6 +1099,8 @@
     textOverlay.noteY = null;
     textOverlay.noteScale = 1.0;
     textOverlay.showEditorUI = false;
+    textOverlay.dateEnable = false;
+    textOverlay.noteEnable = false;
     
     textDate.value = '';
     textNote.value = '';
@@ -951,6 +1124,7 @@
     updateZoom();
     renderGallery();
     scheduleApply();
+    schedulePersistCurrentImage();
     
     showToast('이미지와 모든 효과가 초기화되었습니다.');
   });
@@ -1346,6 +1520,7 @@
       canvas.height = h;
       renderGallery();
       scheduleApply();
+      schedulePersistCurrentImage();
       stopCropping();
     };
     newImg.src = offCanvas.toDataURL();
@@ -1484,11 +1659,8 @@
         img.textOverlay = JSON.parse(JSON.stringify(images[currentIndex].textOverlay));
       }
     });
+    schedulePersistAllImages();
     showToast('현재 설정이 모든 이미지에 적용되었습니다.');
-  });
-
-  btnReset.addEventListener('click', () => {
-    applyPreset(DEFAULT_SETTINGS);
   });
 
   btnNewImage.addEventListener('click', () => {
@@ -2310,6 +2482,29 @@
     });
   }
 
+  function syncPressedState(button) {
+    if (button.matches('.btn-group:not(.zoom-controls) .btn-option, .preset-btn')) {
+      button.setAttribute('aria-pressed', String(button.classList.contains('active')));
+    }
+  }
+
+  function initButtonAccessibility() {
+    document
+      .querySelectorAll('.btn-group:not(.zoom-controls) .btn-option, .preset-btn')
+      .forEach(syncPressedState);
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.target instanceof HTMLElement) syncPressedState(mutation.target);
+      });
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
   // Helper to apply date settings to all images
   function updateGlobalDateSetting(key, value) {
     textOverlay[key] = value;
@@ -2318,6 +2513,7 @@
         img.textOverlay[key] = value;
       }
     });
+    schedulePersistAllImages();
     scheduleApply();
   }
 
@@ -2618,5 +2814,7 @@
   }
   
   initMobileDownloadUI();
+  initButtonAccessibility();
+  restorePersistedImages();
 
 })();
