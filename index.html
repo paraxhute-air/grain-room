@@ -23,7 +23,7 @@
         </div>
         <div class="header-right">
           <p class="tagline">간편하게 필름 감성을 더하세요</p>
-          <button id="btnThemeToggle" class="btn-icon theme-toggle" title="테마 변경" aria-label="라이트 또는 다크 테마 변경">
+          <button id="btnThemeToggle" class="btn-icon theme-toggle" title="테마 변경" aria-label="라이트 또는 다크 테마 변경" tabindex="-1">
             <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
             <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           </button>
@@ -56,7 +56,7 @@
         <!-- Canvas Area -->
         <div class="canvas-area">
           <div class="canvas-wrapper" id="canvasWrapper">
-            <canvas id="canvas" tabindex="0" aria-label="편집 이미지. 노트를 선택한 뒤 화살표 키로 이동하고 Shift와 함께 누르면 크게 이동합니다."></canvas>
+            <canvas id="canvas" tabindex="-1" aria-label="편집 이미지. 노트를 선택한 뒤 화살표 키로 이동하고 Shift와 함께 누르면 크게 이동합니다."></canvas>
             <div id="cropOverlay" class="crop-overlay hidden">
               <div class="crop-rect"></div>
               <div class="crop-actions">
