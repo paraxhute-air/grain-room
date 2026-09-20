@@ -1021,15 +1021,69 @@
     };
   }
 
+  function clampNotePosition(value) {
+    return Math.max(0, Math.min(1, value));
+  }
+
+  function ensureManualNotePosition() {
+    if (textOverlay.noteX !== null && textOverlay.noteY !== null) return;
+
+    const box = noteInteraction.boundingBox;
+    if (box) {
+      textOverlay.noteX = clampNotePosition((box.x + box.w / 2) / canvas.width);
+      textOverlay.noteY = clampNotePosition((box.y + box.h / 2) / canvas.height);
+      return;
+    }
+
+    textOverlay.noteX = 0.5;
+    textOverlay.noteY = 0.5;
+  }
+
+  function moveSelectedNoteWithKeyboard(e) {
+    const movement = {
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1]
+    };
+    const direction = movement[e.key];
+
+    if (!direction ||
+        document.activeElement !== canvas ||
+        !textOverlay.showEditorUI ||
+        !textOverlay.note ||
+        textOverlay.noteEnable === false ||
+        e.altKey || e.ctrlKey || e.metaKey) {
+      return false;
+    }
+
+    // Arrow keys move by 0.5% of the canvas; Shift increases the movement to 2%.
+    const step = e.shiftKey ? 0.02 : 0.005;
+    saveSnapshot('light');
+    ensureManualNotePosition();
+    textOverlay.noteX = clampNotePosition(textOverlay.noteX + direction[0] * step);
+    textOverlay.noteY = clampNotePosition(textOverlay.noteY + direction[1] * step);
+    saveCurrentSettings();
+    scheduleApply();
+    return true;
+  }
+
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault();
       if (e.shiftKey) redo();
       else undo();
+      return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
       e.preventDefault();
       redo();
+      return;
+    }
+
+    if (moveSelectedNoteWithKeyboard(e)) {
+      e.preventDefault();
+      return;
     }
 
     // Delete Note/Date with Delete/Backspace key
@@ -1548,6 +1602,7 @@
         noteInteraction.startX = x;
         noteInteraction.startScale = textOverlay.noteScale || 1.0;
         textOverlay.showEditorUI = true;
+        canvas.focus({ preventScroll: true });
         canvas.style.cursor = 'nwse-resize';
         scheduleApply();
         e.stopPropagation();
@@ -1564,6 +1619,7 @@
         textOverlay.noteX = noteInteraction.startNoteX;
         textOverlay.noteY = noteInteraction.startNoteY;
         textOverlay.showEditorUI = true;
+        canvas.focus({ preventScroll: true });
         canvas.style.cursor = 'move';
         scheduleApply();
         e.stopPropagation();
