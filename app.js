@@ -10,6 +10,7 @@
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
   const editor = document.getElementById('editor');
+  const logoReset = document.getElementById('logoReset');
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const canvasWrapper = document.getElementById('canvasWrapper');
@@ -1108,6 +1109,40 @@
       }
     }
   });
+
+  // 로고 클릭 - 모든 이미지와 편집 상태를 초기화하고 첫 화면으로 복귀
+  function resetToStart() {
+    images.forEach((img) => {
+      deletePersistedImage(img.id).catch((error) => {
+        console.warn('삭제한 이미지를 로컬 저장소에서 정리하지 못했습니다.', error);
+      });
+      releaseImageResources(img);
+    });
+
+    images = [];
+    currentIndex = -1;
+    editor.classList.add('hidden');
+    dropZone.classList.remove('hidden');
+    const mobileNav = document.getElementById('mobileNav');
+    if (mobileNav) mobileNav.classList.add('hidden');
+    fileInput.value = '';
+
+    textOverlay = {
+      date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ff8400', dateStyle: 'retro1',
+      note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+      noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
+    };
+  }
+
+  if (logoReset) {
+    logoReset.addEventListener('click', resetToStart);
+    logoReset.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        resetToStart();
+      }
+    });
+  }
 
   // 초기화 버튼 - 원본으로 완전 리셋 (자르기 포함)
   btnReset.addEventListener('click', () => {
