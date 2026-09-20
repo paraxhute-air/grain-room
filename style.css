@@ -546,6 +546,14 @@ body.light-mode .canvas-wrapper canvas {
   flex-wrap: wrap;
 }
 
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  align-self: center;
+  flex: 0 0 auto;
+}
+
 /* ===== Buttons ===== */
 .btn {
   display: inline-flex;
@@ -893,10 +901,24 @@ body.light-mode .theme-toggle .sun { display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-secondary);
 }
 
 .canvas-actions .btn-group.zoom-controls .btn-option:last-child {
-  border-right: none;
+  border-right: 1px solid transparent;
+}
+
+.canvas-actions .btn-group.zoom-controls #btnZoomOut,
+.canvas-actions .btn-group.zoom-controls #btnZoomIn {
+  flex: 0 0 auto;
+  padding: 6px 7px;
+  min-width: 0;
+}
+
+.canvas-actions .btn-group.zoom-controls #btnZoomOut svg,
+.canvas-actions .btn-group.zoom-controls #btnZoomIn svg {
+  width: 10px;
+  height: 10px;
 }
 
 /* ===== Presets Grid ===== */

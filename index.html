@@ -66,16 +66,6 @@
             </div>
           </div>
           <div class="canvas-actions">
-            <button id="btnCrop" class="btn btn-ghost" title="이미지 자르기">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></svg>
-              자르기
-            </button>
-            <div id="cropRatios" class="btn-group hidden">
-              <button class="btn-option active" data-ratio="free">자유형</button>
-              <button class="btn-option" data-ratio="1:1">1:1</button>
-              <button class="btn-option" data-ratio="16:9">16:9</button>
-              <button class="btn-option" data-ratio="circle">원형</button>
-            </div>
             <button id="btnUndo" class="btn btn-ghost" title="실행 취소 (Ctrl+Z)">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
               실행 취소
@@ -91,6 +81,26 @@
               </svg>
               초기화
             </button>
+            <div class="btn-group zoom-controls">
+              <button id="btnZoomOut" class="btn-option" title="축소" aria-label="이미지 축소">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <button id="btnZoomReset" class="btn-option" title="100%" aria-label="확대 비율 입력">100%</button>
+              <button id="btnZoomIn" class="btn-option" title="확대" aria-label="이미지 확대">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <button id="btnCrop" class="btn btn-ghost" title="이미지 자르기">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></svg>
+              자르기
+            </button>
+            <div id="cropRatios" class="btn-group hidden">
+              <button class="btn-option active" data-ratio="free">자유형</button>
+              <button class="btn-option" data-ratio="1:1">1:1</button>
+              <button class="btn-option" data-ratio="16:9">16:9</button>
+              <button class="btn-option" data-ratio="circle">원형</button>
+            </div>
             <button id="btnRotate" class="btn btn-ghost" title="90도 반시계 회전">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 10a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 7"/>
@@ -99,15 +109,7 @@
               </svg>
               회전
             </button>
-            <div class="btn-group zoom-controls">
-              <button id="btnZoomOut" class="btn-option" title="축소" aria-label="이미지 축소">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </button>
-              <button id="btnZoomReset" class="btn-option" title="100%" aria-label="확대 비율 입력">100%</button>
-              <button id="btnZoomIn" class="btn-option" title="확대" aria-label="이미지 확대">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </button>
-            </div>
+            <div class="toolbar-divider"></div>
             <button id="btnApplyAll" class="btn btn-ghost" title="현재 세팅 모든 이미지에 적용">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10H7z"/><path d="M16 16h6v6h-6z"/><path d="M2 2h6v6H2z"/></svg>
               일괄 적용
