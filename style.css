@@ -837,7 +837,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   flex: 1;
   padding: 6px 8px;
   border: none;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid #6b7280;
   border-radius: 0;
   background: transparent;
   color: var(--text-muted);
@@ -873,7 +873,8 @@ body.light-mode .theme-toggle .sun { display: block; }
 .btn-option.active {
   background: #dc2626;
   color: #ffffff;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+  outline: 2px solid var(--bg-primary);
+  outline-offset: -2px;
   font-weight: 700;
 }
 

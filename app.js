@@ -129,7 +129,7 @@
     date: '',
     datePos: 'bottom-right',
     dateDir: 'horizontal',
-    dateColor: '#ffffff',
+    dateColor: '#ff8400',
     dateStyle: 'retro1',
     
     note: '',
@@ -184,7 +184,10 @@
   // Initialize Date Input with today's default
   textOverlay.date = getDefaultDateText('retro1');
   textOverlay.dateColor = getDefaultDateColor('retro1');
-  if (textDate) textDate.value = textOverlay.date;
+  if (textDate) {
+    textDate.value = textOverlay.date;
+    textDate.placeholder = textOverlay.date;
+  }
 
   let noteInteraction = {
     type: null, // 'drag', 'resize'
@@ -219,7 +222,7 @@
     brightness: 0, contrast: 0, saturation: 0, temperature: 0,
     sepia: 0, vignette: 0, fade: 0,
     cyan: 0, magenta: 0, yellow: 0, key: 0,
-    frame: 'none',
+    frame: 'white',
     frameEnable: false,
     frameMargin: 'small'
   };
@@ -638,7 +641,7 @@
       if (mobileNav) mobileNav.classList.add('hidden');
       // Reset global textOverlay state to default
       textOverlay = { 
-          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
+          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ff8400', dateStyle: 'retro1',
           note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
           noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
       };
@@ -667,7 +670,7 @@
         textOverlay = JSON.parse(JSON.stringify(imgData.textOverlay));
     } else {
          textOverlay = { 
-          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff', dateStyle: 'normal',
+          date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ff8400', dateStyle: 'retro1',
           note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
           noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
         };
@@ -771,7 +774,7 @@
       magenta: parseInt(magenta.value),
       yellow: parseInt(yellow.value),
       key: parseInt(key.value),
-      frame: images[currentIndex].settings.frame || 'none',
+      frame: images[currentIndex].settings.frame || 'white',
       frameEnable: images[currentIndex].settings.frameEnable === true,
       frameMargin: images[currentIndex].settings.frameMargin || 'small'
     };
@@ -2177,6 +2180,22 @@
             const tw = texImg.width * scale;
             const th = texImg.height * scale;
             targetCtx.drawImage(texImg, (w - tw) / 2, (h - th) / 2, tw, th);
+
+            // Ivory tint so the texture reads clearly darker than a plain white frame
+            targetCtx.save();
+            targetCtx.globalCompositeOperation = 'multiply';
+            targetCtx.fillStyle = 'rgba(230, 218, 190, 0.55)';
+            targetCtx.fillRect(0, 0, w, h);
+            targetCtx.restore();
+
+            // Soft edge shadow for depth
+            const cx = w / 2, cy = h / 2;
+            const radius = Math.sqrt(cx * cx + cy * cy);
+            const shadowGradient = targetCtx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius);
+            shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+            targetCtx.fillStyle = shadowGradient;
+            targetCtx.fillRect(0, 0, w, h);
         } else {
             targetCtx.fillStyle = '#ffffff';
             targetCtx.fillRect(0, 0, w, h);
@@ -2188,14 +2207,21 @@
         else if (marginType === 'large') marginRatio = 0.15;
 
         const padding = Math.min(w, h) * marginRatio;
-        const targetW = w - padding * 2;
-        const targetH = h - padding * 2;
-        
+        const boxW = w - padding * 2;
+        const boxH = h - padding * 2;
+
         if (vigAmount > 0) {
             applyVignette(bufferCtx, w, h, vigAmount / 100);
         }
-        
-        targetCtx.drawImage(bufferCanvas, padding, padding, targetW, targetH);
+
+        // Fit the photo inside the frame box without distorting its aspect ratio
+        const fitScale = Math.min(boxW / w, boxH / h);
+        const drawW = w * fitScale;
+        const drawH = h * fitScale;
+        const drawX = padding + (boxW - drawW) / 2;
+        const drawY = padding + (boxH - drawH) / 2;
+
+        targetCtx.drawImage(bufferCanvas, drawX, drawY, drawW, drawH);
     }
 
     // 8. Vignette (if no frame)
@@ -2522,7 +2548,7 @@
     
     if (currentIndex !== -1) {
       const settings = images[currentIndex].settings;
-      if (frameGroup) syncButtonGroup(frameGroup, settings.frame || 'none');
+      if (frameGroup) syncButtonGroup(frameGroup, settings.frame || 'white');
       if (frameEnableToggle) frameEnableToggle.checked = settings.frameEnable !== false;
       if (frameMarginGroup) syncButtonGroup(frameMarginGroup, settings.frameMargin || 'small');
     }
@@ -2611,6 +2637,7 @@
       // Automatically apply default format for the selected style
       const defaultText = getDefaultDateText(newStyle);
       textDate.value = defaultText;
+      textDate.placeholder = defaultText;
       updateGlobalDateSetting('date', defaultText);
       
       // Automatically apply default color for the selected style
