@@ -546,14 +546,6 @@ body.light-mode .canvas-wrapper canvas {
   flex-wrap: wrap;
 }
 
-.toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: var(--border);
-  align-self: center;
-  flex: 0 0 auto;
-}
-
 /* ===== Buttons ===== */
 .btn {
   display: inline-flex;
