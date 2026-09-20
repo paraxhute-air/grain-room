@@ -1314,6 +1314,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  align-items: center;
   gap: 10px;
   padding: 8px;
   background: rgba(0, 0, 0, 0.8);
@@ -1321,6 +1322,29 @@ body.light-mode .theme-toggle .sun { display: block; }
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   pointer-events: auto;
+}
+
+.crop-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: grab;
+  touch-action: none;
+}
+
+.crop-drag-handle:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.crop-actions.dragging {
+  cursor: grabbing;
+}
+
+.crop-actions.dragging .crop-drag-handle {
+  cursor: grabbing;
 }
 
 .btn-sm {

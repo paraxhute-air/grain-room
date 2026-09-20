@@ -38,6 +38,8 @@
   const cropRatios = document.getElementById('cropRatios');
   const cropOverlay = document.getElementById('cropOverlay');
   const cropRect = cropOverlay.querySelector('.crop-rect');
+  const cropActionsBar = cropOverlay.querySelector('.crop-actions');
+  const cropDragHandle = cropOverlay.querySelector('.crop-drag-handle');
   const btnCropCancel = document.getElementById('btnCropCancel');
   const btnCropApply = document.getElementById('btnCropApply');
 
@@ -1395,6 +1397,7 @@
     cropRatios.classList.remove('hidden');
     btnCrop.classList.add('active');
     resetCropRect();
+    resetCropActionsPosition();
   });
 
   function resetCropRect() {
@@ -1425,9 +1428,73 @@
   });
 
   // 적용/취소 버튼 클릭 시 overlay의 mousedown이 발동되지 않도록 차단
-  document.querySelector('.crop-actions').addEventListener('mousedown', (e) => {
+  cropActionsBar.addEventListener('mousedown', (e) => {
     e.stopPropagation();
   });
+
+  // 취소/적용 바를 오버레이 안에서 자유롭게 이동
+  function resetCropActionsPosition() {
+    cropActionsBar.style.left = '';
+    cropActionsBar.style.top = '';
+    cropActionsBar.style.right = '';
+    cropActionsBar.style.bottom = '';
+    cropActionsBar.style.transform = '';
+  }
+
+  let cropActionsDrag = null;
+
+  function startCropActionsDrag(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    const clientX = e.clientX || e.touches[0].clientX;
+    const clientY = e.clientY || e.touches[0].clientY;
+    const overlayRect = cropOverlay.getBoundingClientRect();
+    const barRect = cropActionsBar.getBoundingClientRect();
+
+    cropActionsDrag = {
+      offsetX: clientX - barRect.left,
+      offsetY: clientY - barRect.top,
+      overlayRect
+    };
+
+    cropActionsBar.style.left = `${barRect.left - overlayRect.left}px`;
+    cropActionsBar.style.top = `${barRect.top - overlayRect.top}px`;
+    cropActionsBar.style.right = 'auto';
+    cropActionsBar.style.bottom = 'auto';
+    cropActionsBar.style.transform = 'none';
+    cropActionsBar.classList.add('dragging');
+  }
+
+  function moveCropActionsDrag(e) {
+    if (!cropActionsDrag) return;
+    e.preventDefault();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const { offsetX, offsetY, overlayRect } = cropActionsDrag;
+    const barRect = cropActionsBar.getBoundingClientRect();
+
+    let newLeft = clientX - overlayRect.left - offsetX;
+    let newTop = clientY - overlayRect.top - offsetY;
+    newLeft = Math.max(0, Math.min(newLeft, overlayRect.width - barRect.width));
+    newTop = Math.max(0, Math.min(newTop, overlayRect.height - barRect.height));
+
+    cropActionsBar.style.left = `${newLeft}px`;
+    cropActionsBar.style.top = `${newTop}px`;
+  }
+
+  function endCropActionsDrag() {
+    cropActionsDrag = null;
+    cropActionsBar.classList.remove('dragging');
+  }
+
+  cropDragHandle.addEventListener('mousedown', startCropActionsDrag);
+  window.addEventListener('mousemove', moveCropActionsDrag);
+  window.addEventListener('mouseup', endCropActionsDrag);
+
+  cropDragHandle.addEventListener('touchstart', startCropActionsDrag, { passive: false });
+  window.addEventListener('touchmove', moveCropActionsDrag, { passive: false });
+  window.addEventListener('touchend', endCropActionsDrag);
+  window.addEventListener('touchcancel', endCropActionsDrag);
 
   function stopCropping() {
     isCropping = false;
