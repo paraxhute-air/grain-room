@@ -542,7 +542,7 @@ body.light-mode .canvas-wrapper canvas {
 .canvas-actions {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: center;
   flex-wrap: wrap;
 }
 
