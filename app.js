@@ -221,7 +221,7 @@
 
   // Default settings for a new image
   const DEFAULT_SETTINGS = {
-    grainIntensity: 0, grainSize: 1, blendMode: 'overlay',
+    grainIntensity: 30, grainSize: 2, blendMode: 'overlay',
     brightness: 0, contrast: 0, saturation: 0, temperature: 0,
     sepia: 0, vignette: 0, fade: 0,
     cyan: 0, magenta: 0, yellow: 0, key: 0,
@@ -853,7 +853,7 @@
       wrapper.addEventListener('click', (event) => {
         const button = event.target.closest('.slider-stepper-button');
         if (!button || button.disabled) return;
-        const step = Number(slider.step) || 1;
+        const step = Number(slider.dataset.stepperStep || slider.step) || 1;
         const delta = button.dataset.direction === 'decrease' ? -step : step;
         const nextValue = Math.min(Number(slider.max), Math.max(Number(slider.min), Number(slider.value) + delta));
         if (nextValue === Number(slider.value)) return;
