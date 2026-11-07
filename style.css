@@ -797,6 +797,14 @@ body.light-mode .theme-toggle .sun { display: block; }
   cursor: pointer;
 }
 
+.slider-stepper {
+  display: block;
+}
+
+.slider-stepper-button {
+  display: none;
+}
+
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -1553,6 +1561,54 @@ body.light-mode .theme-toggle .sun { display: block; }
 
   .control-section .section-title {
     display: none; /* Hide standard title, we'll rely on the slide up context */
+  }
+
+  /* Leave room for precise, one-step adjustments without removing drag control. */
+  .slider-stepper {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .slider-stepper .slider {
+    width: 100%;
+  }
+
+  .slider-stepper-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .slider-stepper-button:active:not(:disabled) {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+  }
+
+  .slider-stepper-button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .slider-stepper-button svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   /* Mobile Nav Container (Bottom Fixed) */

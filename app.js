@@ -807,6 +807,7 @@
     });
 
     sliders.forEach(updateValueDisplay);
+    sliders.forEach((slider) => slider.dispatchEvent(new Event('sliderstepperchange')));
     document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
   }
 
@@ -815,6 +816,59 @@
     grainIntensity, grainSize, brightness, contrast, saturation, temperature, 
     sepia, vignette, fade, cyan, magenta, yellow, key
   ];
+
+  // Mobile range controls: keep dragging available while providing precise
+  // single-step adjustments with comfortably sized arrow buttons.
+  function setupSliderSteppers() {
+    sliders.forEach((slider) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'slider-stepper';
+
+      const label = slider.closest('.control-group')?.querySelector('.label-text')?.textContent.trim() || '값';
+      const createButton = (direction, labelText) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `slider-stepper-button slider-stepper-${direction}`;
+        button.dataset.sliderId = slider.id;
+        button.dataset.direction = direction;
+        button.setAttribute('aria-label', `${label} ${labelText}`);
+        button.setAttribute('title', `${label} ${labelText}`);
+        button.innerHTML = direction === 'decrease'
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+        return button;
+      };
+
+      const decreaseButton = createButton('decrease', '줄이기');
+      const increaseButton = createButton('increase', '늘리기');
+      slider.parentNode.insertBefore(wrapper, slider);
+      wrapper.append(decreaseButton, slider, increaseButton);
+
+      const updateStepperState = () => {
+        const value = Number(slider.value);
+        decreaseButton.disabled = value <= Number(slider.min);
+        increaseButton.disabled = value >= Number(slider.max);
+      };
+
+      wrapper.addEventListener('click', (event) => {
+        const button = event.target.closest('.slider-stepper-button');
+        if (!button || button.disabled) return;
+        const step = Number(slider.step) || 1;
+        const delta = button.dataset.direction === 'decrease' ? -step : step;
+        const nextValue = Math.min(Number(slider.max), Math.max(Number(slider.min), Number(slider.value) + delta));
+        if (nextValue === Number(slider.value)) return;
+        slider.value = String(nextValue);
+        slider.dispatchEvent(new Event('input', { bubbles: true }));
+        slider.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      slider.addEventListener('input', updateStepperState);
+      slider.addEventListener('sliderstepperchange', updateStepperState);
+      updateStepperState();
+    });
+  }
+
+  setupSliderSteppers();
 
   sliders.forEach((slider) => {
     slider.addEventListener('input', () => {
