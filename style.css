@@ -1490,6 +1490,7 @@ body.light-mode .theme-toggle .sun { display: block; }
     height: auto;
     flex: 1 1 auto;
     min-height: 0;
+    gap: 0; /* Spacing comes from the toolbar/gallery padding so top and bottom match */
     border-bottom: none;
     padding-bottom: 0px;
     width: 100%;
@@ -1521,7 +1522,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   .canvas-actions {
     overflow-x: auto;
     white-space: nowrap;
-    padding: 8px 12px 10px;
+    padding: 10px 12px; /* Same space above and below the buttons */
     justify-content: center;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -1824,7 +1825,8 @@ body.light-mode .theme-toggle .sun { display: block; }
     height: 100%;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* Sit closer to the top border, away from the home indicator */
+    padding-top: 12px;
     gap: 4px;
     color: var(--text-muted);
     font-size: 0.65rem;
@@ -1871,7 +1873,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   }
   
   .image-gallery {
-    padding: 6px 12px 8px;
+    padding: 8px 12px; /* + 2px border = 10px above and below thumbnails, matching the toolbar */
     gap: 6px;
   }
 

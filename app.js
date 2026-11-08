@@ -1770,10 +1770,13 @@
       isDraggingRect = true;
       dragOffset = { x: mouseX - cropRectData.x, y: mouseY - cropRectData.y };
     } else {
-      // Start new selection
+      // Start new selection (시작점은 이미지 안으로 제한)
+      const b = getCropImageBounds();
+      const startX = Math.max(b.minX, Math.min(b.maxX, mouseX));
+      const startY = Math.max(b.minY, Math.min(b.maxY, mouseY));
       isDraggingRect = false;
-      cropStart = { x: mouseX, y: mouseY };
-      cropRectData = { x: mouseX, y: mouseY, w: 0, h: 0 };
+      cropStart = { x: startX, y: startY };
+      cropRectData = { x: startX, y: startY, w: 0, h: 0 };
     }
     try { cropOverlay.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     e.preventDefault();
@@ -1816,50 +1819,33 @@
       
       updateCropRectUI();
     } else if (cropStart) {
-      // Clamp start point first (in case it started outside? usually safe if mousedown inside)
-      // But current mouse position should be clamped
       const currentX = Math.max(minX, Math.min(maxX, mouseX));
       const currentY = Math.max(minY, Math.min(maxY, mouseY));
-      
-      let w = currentX - cropStart.x;
-      let h = currentY - cropStart.y;
+      const dx = currentX - cropStart.x;
+      const dy = currentY - cropStart.y;
+      const sx = dx < 0 ? -1 : 1;
+      const sy = dy < 0 ? -1 : 1;
+      // 기준점에서 끌고 있는 방향으로 이미지 끝까지 남은 공간
+      const roomW = Math.max(0, sx > 0 ? maxX - cropStart.x : cropStart.x - minX);
+      const roomH = Math.max(0, sy > 0 ? maxY - cropStart.y : cropStart.y - minY);
 
-      // Handle aspect ratios
-      if (currentCropRatio === '1:1' || currentCropRatio === 'circle') {
-        const side = Math.max(Math.abs(w), Math.abs(h));
-        // We need to check if expanding square fits? 
-        // Simple approach: Use calculated side but clamp result?
-        // Better: standard logic then clamp?
-        
-        // Let's stick to standard logic then clamp box?
-        // If we clamp box, aspect ratio might break.
-        // For simplicity, let's just use the w, h as is, derived from clamped mouse. 
-        // But if we force aspect ratio, the other dimension might exceed bound.
-        
-        w = w >= 0 ? side : -side;
-        h = h >= 0 ? side : -side;
-      } else if (currentCropRatio === '16:9') {
-        const targetH = Math.abs(w) / (16/9);
-        h = h >= 0 ? targetH : -targetH;
+      let newW;
+      let newH;
+      const ratio = (currentCropRatio === '1:1' || currentCropRatio === 'circle') ? 1
+        : currentCropRatio === '16:9' ? 16 / 9 : null;
+      if (ratio) {
+        // 고정 비율(원형 포함)은 가장자리에 닿아도 비율을 유지한 채 크기만 멈춘다
+        newW = currentCropRatio === '16:9' ? Math.abs(dx) : Math.max(Math.abs(dx), Math.abs(dy));
+        newW = Math.min(newW, roomW, roomH * ratio);
+        newH = newW / ratio;
+      } else {
+        newW = Math.min(Math.abs(dx), roomW);
+        newH = Math.min(Math.abs(dy), roomH);
       }
 
-      let newX = w >= 0 ? cropStart.x : cropStart.x + w;
-      let newY = h >= 0 ? cropStart.y : cropStart.y + h;
-      let newW = Math.abs(w);
-      let newH = Math.abs(h);
-      
-      // Clamp the resulting box to image bounds (preserving size/ratio if possible? no, must contain)
-      // If it goes out, we should probably limit the growth.
-      // Complex constraint for fixed ratio. 
-      // For now, let's just clamp the box and ignore ratio if it breaks? 
-      // UX: User expects ratio to hold. So we must stop growing if hit edge.
-      
-      // Check bounds
-      if (newX < minX) { newW -= (minX - newX); newX = minX; }
-      if (newY < minY) { newH -= (minY - newY); newY = minY; }
-      if (newX + newW > maxX) newW = maxX - newX;
-      if (newY + newH > maxY) newH = maxY - newY;
-      
+      const newX = sx > 0 ? cropStart.x : cropStart.x - newW;
+      const newY = sy > 0 ? cropStart.y : cropStart.y - newH;
+
       cropRectData.x = newX;
       cropRectData.y = newY;
       cropRectData.w = newW;
@@ -3226,29 +3212,49 @@
     // 2. 바깥 배경 누르면 닫기
     mobileOverlay.addEventListener('click', closeMobileNav);
 
-    // 3. 바텀 시트 핸들 드래그(스와이프 다운)로 닫기
-    let startY = 0;
+    // 3. 바텀 시트 핸들 드래그(스와이프 다운)로 닫기 — 손가락을 따라 내려가고, 놓으면 닫히거나 제자리로 돌아감
+    let sheetDrag = null;
     controlsSidebar.addEventListener('touchstart', (e) => {
+      if (!controlsSidebar.classList.contains('active')) return;
       // 내부에 스크롤해야하는 요소(slider, button 등) 누른거면 무시
       if (e.target.closest('.slider, button, input, select')) return;
       // 시트 맨 상단(핸들 근처)에서만 드래그 허용
       const topOffset = controlsSidebar.getBoundingClientRect().top;
       if (e.touches[0].clientY - topOffset > 50) return;
-      startY = e.touches[0].clientY;
-    });
+      sheetDrag = { startY: e.touches[0].clientY, lastY: e.touches[0].clientY, lastT: performance.now(), velocity: 0, dy: 0 };
+      controlsSidebar.style.transition = 'none';
+    }, { passive: true });
 
     controlsSidebar.addEventListener('touchmove', (e) => {
-      if (!startY) return;
-      const currentY = e.touches[0].clientY;
-      if (currentY - startY > 60) { // 60px 이상 내렸을 때
-        closeMobileNav();
-        startY = 0;
-      }
-    });
+      if (!sheetDrag) return;
+      const y = e.touches[0].clientY;
+      const now = performance.now();
+      const dt = Math.max(1, now - sheetDrag.lastT);
+      sheetDrag.velocity = (y - sheetDrag.lastY) / dt; // px/ms, 아래로 +
+      sheetDrag.lastY = y;
+      sheetDrag.lastT = now;
+      // 위로는 거의 안 올라가게(살짝 저항), 아래로는 손가락을 그대로 따라감
+      const raw = y - sheetDrag.startY;
+      sheetDrag.dy = raw < 0 ? raw * 0.15 : raw;
+      controlsSidebar.style.transform = `translateY(${sheetDrag.dy}px)`;
+      e.preventDefault();
+    }, { passive: false });
 
-    controlsSidebar.addEventListener('touchend', () => {
-      startY = 0; // 드래그 초기화
-    });
+    function endSheetDrag() {
+      if (!sheetDrag) return;
+      const { dy, velocity } = sheetDrag;
+      sheetDrag = null;
+      const sheetHeight = controlsSidebar.getBoundingClientRect().height || 1;
+      const shouldClose = dy > sheetHeight * 0.3 || (dy > 20 && velocity > 0.5);
+      // CSS 전환 효과를 되살린 뒤, 지금 위치에서 닫힘/열림 위치로 부드럽게 이동
+      controlsSidebar.style.transition = '';
+      void controlsSidebar.offsetHeight;
+      controlsSidebar.style.transform = '';
+      if (shouldClose) closeMobileNav();
+    }
+
+    controlsSidebar.addEventListener('touchend', endSheetDrag);
+    controlsSidebar.addEventListener('touchcancel', endSheetDrag);
 
     // (Arrow scrolling removed based on user request)
 
