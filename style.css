@@ -286,7 +286,13 @@ body.light-mode .logo svg {
 .text-input:focus {
   border-color: #ef4444;
   background: rgba(128, 128, 128, 0.12);
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+}
+
+/* Text fields already show focus with the red border above; skip the global
+   focus outline so the two don't stack into a double border (iOS applies it on tap). */
+.text-input:focus-visible {
+  outline: none;
 }
 
 /* Override browser autofill (white background issue) */
