@@ -1526,14 +1526,15 @@ body.light-mode .theme-toggle .sun { display: block; }
     justify-content: center;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    gap: 8px;
+    gap: 0 8px; /* No row gap: the line break below provides the space between rows */
     border-bottom: 1px solid var(--border);
   }
 
+  /* Full-width break on its own line = the 6px space between the two toolbar rows */
   .canvas-actions .toolbar-break {
     display: block;
     flex-basis: 100%;
-    height: 0;
+    height: 6px;
   }
 
   /* Undo/redo use universally known icons; hide their text on mobile */
