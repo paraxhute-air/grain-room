@@ -1537,14 +1537,18 @@ body.light-mode .theme-toggle .sun { display: block; }
     right: 0;
     width: 100%;
     height: auto;
-    max-height: 80dvh;
+    /* Keep the sheet short so the photo stays visible; content scrolls inside. */
+    --sheet-nav-space: calc(78px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(min(40dvh, 360px) + var(--sheet-nav-space) + 24px);
+    display: flex;
+    flex-direction: column;
     border-radius: 20px 20px 0 0;
     margin: 0;
-    padding: 24px 20px 94px; /* Increased bottom padding to accommodate bottom nav */
+    padding: 24px 20px var(--sheet-nav-space); /* Bottom padding sits behind the bottom nav */
     background: var(--bg-secondary);
     box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
     z-index: 101; /* Above overlay */
-    overflow-y: auto;
+    overflow: hidden;
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
   }
@@ -1568,6 +1572,47 @@ body.light-mode .theme-toggle .sun { display: block; }
   
   body.light-mode .controls-sidebar::before {
     background: rgba(0, 0, 0, 0.2);
+  }
+
+  /* Scrollable content area of the bottom sheet (handle stays fixed above it) */
+  .controls-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 6px;
+    margin-right: -10px;
+    padding-bottom: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+  }
+
+  .controls-panel::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .controls-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .controls-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 2px;
+  }
+
+  body.light-mode .controls-panel {
+    scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+  }
+
+  body.light-mode .controls-panel::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* Only one section is shown at a time on mobile; no trailing gap in the scroll area */
+  .control-section.active {
+    margin-bottom: 0;
   }
 
   /* Sections within the sidebar */
