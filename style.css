@@ -1268,6 +1268,12 @@ body.light-mode .theme-toggle .sun { display: block; }
   background: var(--danger);
 }
 
+/* Mobile-only toolbar line break and "+" tile label */
+.toolbar-break,
+.thumb-add-label {
+  display: none;
+}
+
 /* ===== Mobile Elements (Hidden on PC) ===== */
 .mobile-nav-container,
 .mobile-sheet-overlay,
@@ -1421,7 +1427,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   .app {
     height: 100dvh; /* Dynamic viewport height */
     padding: 0;
-    --thumb-height: 70px; /* Adjusted mobile thumb height */
+    --thumb-height: 52px; /* Compact mobile thumbnails to give the canvas more room */
     display: flex;
     flex-direction: column;
   }
@@ -1456,10 +1462,11 @@ body.light-mode .theme-toggle .sun { display: block; }
     gap: 0;
   }
 
-  /* Top: Canvas Area */
+  /* Top: Canvas Area — fills the space between header and bottom nav */
   .canvas-area {
-    height: 82dvh;
-    flex: none;
+    height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
     border-bottom: none;
     padding-bottom: 0px;
     width: 100%;
@@ -1487,16 +1494,33 @@ body.light-mode .theme-toggle .sun { display: block; }
     display: none;
   }
 
-  /* Toolbar Scroll */
+  /* Toolbar: two rows (edit/zoom, then actions) */
   .canvas-actions {
     overflow-x: auto;
     white-space: nowrap;
-    padding: 8px 12px 12px 12px;
+    padding: 8px 12px 10px;
     justify-content: center;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    gap: 12px;
+    gap: 8px;
     border-bottom: 1px solid var(--border);
+  }
+
+  .canvas-actions .toolbar-break {
+    display: block;
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  /* Undo/redo use universally known icons; hide their text on mobile */
+  #btnUndo .btn-label,
+  #btnRedo .btn-label {
+    display: none;
+  }
+
+  /* Same action as the "+ 추가" tile in the thumbnail bar */
+  #btnNewImage {
+    display: none;
   }
   
   .canvas-actions::-webkit-scrollbar {
@@ -1504,8 +1528,18 @@ body.light-mode .theme-toggle .sun { display: block; }
   }
   
   .canvas-actions .btn {
-    padding: 8px 12px; /* Slightly smaller horizontal padding */
+    padding: 7px 10px; /* Compact so each row fits on one line */
+    gap: 5px;
     font-size: 0.8rem;
+  }
+
+  #btnUndo,
+  #btnRedo {
+    padding: 7px 9px;
+  }
+
+  .canvas-actions .btn-group.zoom-controls {
+    height: 32px;
   }
   
   .canvas-actions svg {
@@ -1785,17 +1819,32 @@ body.light-mode .theme-toggle .sun { display: block; }
   }
   
   .image-gallery {
-    padding: 8px 12px;
-    gap: 8px;
+    padding: 6px 12px 8px;
+    gap: 6px;
+  }
+
+  /* Number sits inside the thumbnail as a small badge instead of a row below it */
+  .thumb-id {
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    margin: 0;
+    padding: 0 5px;
+    font-size: 0.62rem;
+    line-height: 16px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    pointer-events: none;
   }
 
   /* Always show delete button on active mobile thumbnail to make deletion obvious but clean */
   .thumb-delete {
-    width: 20px;
-    height: 20px;
-    font-size: 14px;
-    top: 4px;
-    right: 4px;
+    width: 16px;
+    height: 16px;
+    font-size: 12px;
+    top: 3px;
+    right: 3px;
   }
   
   .thumb-img-box.active .thumb-delete {
@@ -1803,9 +1852,30 @@ body.light-mode .theme-toggle .sun { display: block; }
   }
 
   .thumb-item.thumb-add {
-    width: calc(var(--thumb-height) - 4px);
-    height: calc(var(--thumb-height) - 4px);
-    margin-top: 2px;
+    width: var(--thumb-height);
+    height: var(--thumb-height);
+    margin-top: 0;
+  }
+
+  .thumb-add-inner {
+    flex-direction: column;
+    gap: 1px;
+    color: rgba(160, 160, 180, 0.75);
+  }
+
+  .thumb-add-inner svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .thumb-add-label {
+    display: block;
+    font-size: 0.6rem;
+    line-height: 1;
+  }
+
+  body.light-mode .thumb-add-inner {
+    color: rgba(70, 70, 90, 0.7);
   }
 
   /* Modal Adjustments */
