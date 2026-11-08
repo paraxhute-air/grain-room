@@ -1362,6 +1362,13 @@ body.light-mode .theme-toggle .sun { display: block; }
   pointer-events: auto;
 }
 
+/* Crop bar is always dark, so keep its ghost button readable in light mode too */
+.crop-actions .btn-ghost {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 .crop-drag-handle {
   display: flex;
   align-items: center;
@@ -1521,6 +1528,36 @@ body.light-mode .theme-toggle .sun { display: block; }
   /* Same action as the "+ 추가" tile in the thumbnail bar */
   #btnNewImage {
     display: none;
+  }
+
+  /* Crop ratio picker floats over the top of the canvas so the toolbar stays two rows */
+  .canvas-area {
+    position: relative;
+  }
+
+  .canvas-actions #cropRatios {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20; /* Above the crop overlay (10) */
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .canvas-actions #cropRatios .btn-option {
+    padding: 6px 12px;
+    color: rgba(255, 255, 255, 0.75);
+    border-right-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .canvas-actions #cropRatios .btn-option.active {
+    color: #ffffff;
+    outline-color: transparent;
   }
   
   .canvas-actions::-webkit-scrollbar {
