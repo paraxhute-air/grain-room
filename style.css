@@ -686,7 +686,8 @@ body.light-mode .theme-toggle .sun { display: block; }
 }
 
 .control-section.collapsed .control-group,
-.control-section.collapsed .presets-grid {
+.control-section.collapsed .presets-grid,
+.control-section.collapsed .preset-strength {
   display: none;
 }
 
@@ -1017,6 +1018,19 @@ body.light-mode .theme-toggle .sun { display: block; }
 
 .preset-preview.midnight-blue {
   background: linear-gradient(135deg, #2c537c, #11192b);
+}
+
+.preset-strength {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.preset-strength label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
 
 /* ===== Modal ===== */

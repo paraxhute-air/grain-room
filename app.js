@@ -65,6 +65,11 @@
   const yellow = document.getElementById('yellow');
   const key = document.getElementById('key');
 
+  // Preset intensity control
+  const presetStrength = document.getElementById('presetStrength');
+  const presetStrengthControl = document.getElementById('presetStrengthControl');
+  const presetStrengthVal = document.getElementById('presetStrengthVal');
+
   // Text overlay elements
   const textDate = document.getElementById('textDate');
   const textNote = document.getElementById('textNote');
@@ -110,6 +115,8 @@
   let images = []; // Array of { id, originalImage, originalPixels, settings, ... }
   let currentIndex = -1;
   let currentBlendMode = 'overlay';
+  let activePresetId = null;
+  let presetBaseSettings = null;
   let rafId = null;
   let currentZoom = 1.0;
   let isCropping = false;
@@ -798,14 +805,17 @@
       key: parseInt(key.value),
       frame: images[currentIndex].settings.frame || 'white',
       frameEnable: images[currentIndex].settings.frameEnable === true,
-      frameMargin: images[currentIndex].settings.frameMargin || 'small'
+      frameMargin: images[currentIndex].settings.frameMargin || 'small',
+      presetId: activePresetId,
+      presetStrength: activePresetId ? Number(presetStrength.value) : null,
+      presetBaseSettings: activePresetId ? { ...presetBaseSettings } : null
     };
     // Save text state too
     images[currentIndex].textOverlay = JSON.parse(JSON.stringify(textOverlay));
     schedulePersistCurrentImage();
   }
 
-  function loadSettingsIntoUI(s) {
+  function loadSettingsIntoUI(s, { syncPreset = true } = {}) {
     grainIntensity.value = s.grainIntensity;
     grainSize.value = s.grainSize;
     brightness.value = s.brightness;
@@ -827,7 +837,9 @@
 
     sliders.forEach(updateValueDisplay);
     sliders.forEach((slider) => slider.dispatchEvent(new Event('sliderstepperchange')));
-    document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+    if (syncPreset) {
+      restorePresetState(s);
+    }
   }
 
   // ===== Controls Event Listeners =====
@@ -875,7 +887,14 @@
         const isGrainControl = slider.id === 'grainIntensity' || slider.id === 'grainSize';
         const step = Number(slider.dataset.stepperStep || (isGrainControl ? slider.step : 10)) || 1;
         const delta = button.dataset.direction === 'decrease' ? -step : step;
-        const nextValue = Math.min(Number(slider.max), Math.max(Number(slider.min), Number(slider.value) + delta));
+        const currentValue = Number(slider.value);
+        const isOnStep = Number.isInteger(currentValue / step);
+        const steppedValue = isGrainControl
+          ? currentValue + delta
+          : button.dataset.direction === 'decrease'
+            ? (isOnStep ? currentValue - step : Math.floor(currentValue / step) * step)
+            : (isOnStep ? currentValue + step : Math.ceil(currentValue / step) * step);
+        const nextValue = Math.min(Number(slider.max), Math.max(Number(slider.min), steppedValue));
         if (nextValue === Number(slider.value)) return;
         slider.value = String(nextValue);
         slider.dispatchEvent(new Event('input', { bubbles: true }));
@@ -892,6 +911,7 @@
 
   sliders.forEach((slider) => {
     slider.addEventListener('input', () => {
+      if (activePresetId) clearPresetState();
       updateValueDisplay(slider);
       saveCurrentSettings(); // Save live
       scheduleApply();
@@ -907,6 +927,76 @@
     if (display) display.textContent = slider.value;
   }
 
+  function getEditorSettings() {
+    return {
+      grainIntensity: Number(grainIntensity.value),
+      grainSize: Number(grainSize.value),
+      blendMode: currentBlendMode,
+      brightness: Number(brightness.value),
+      contrast: Number(contrast.value),
+      saturation: Number(saturation.value),
+      temperature: Number(temperature.value),
+      sepia: Number(sepia.value),
+      vignette: Number(vignette.value),
+      fade: Number(fade.value),
+      cyan: Number(cyan.value),
+      magenta: Number(magenta.value),
+      yellow: Number(yellow.value),
+      key: Number(key.value),
+    };
+  }
+
+  function updatePresetStrengthUI() {
+    const hasPreset = Boolean(activePresetId);
+    presetStrengthControl.hidden = !hasPreset;
+    document.querySelectorAll('.preset-btn').forEach((button) => {
+      button.classList.toggle('active', button.dataset.preset === activePresetId);
+    });
+    if (hasPreset) {
+      presetStrengthVal.textContent = presetStrength.value;
+    }
+  }
+
+  function clearPresetState() {
+    activePresetId = null;
+    presetBaseSettings = null;
+    updatePresetStrengthUI();
+  }
+
+  function restorePresetState(settings) {
+    const savedPresetId = settings.presetId;
+    const savedBase = settings.presetBaseSettings;
+    if (!savedPresetId || !PRESETS[savedPresetId] || !savedBase) {
+      clearPresetState();
+      return;
+    }
+
+    activePresetId = savedPresetId;
+    presetBaseSettings = { ...savedBase };
+    presetStrength.value = String(Math.min(100, Math.max(0, Number(settings.presetStrength) || 0)));
+    updatePresetStrengthUI();
+  }
+
+  function applyPresetStrength() {
+    if (!activePresetId || !presetBaseSettings) return;
+
+    const targetSettings = { ...DEFAULT_SETTINGS, ...PRESETS[activePresetId] };
+    const ratio = Number(presetStrength.value) / 100;
+    const mixedSettings = { ...presetBaseSettings };
+    Object.keys(presetBaseSettings).forEach((key) => {
+      if (key === 'blendMode') {
+        mixedSettings.blendMode = ratio >= 0.5 ? targetSettings.blendMode : presetBaseSettings.blendMode;
+        return;
+      }
+      mixedSettings[key] = Math.round(presetBaseSettings[key] + (targetSettings[key] - presetBaseSettings[key]) * ratio);
+    });
+
+    loadSettingsIntoUI(mixedSettings, { syncPreset: false });
+    updatePresetStrengthUI();
+    saveCurrentSettings();
+    scheduleApply();
+  }
+
   // Blend mode buttons
   blendModeGroup.addEventListener('click', (e) => {
     const btn = e.target.closest('.btn-option');
@@ -914,6 +1004,7 @@
     blendModeGroup.querySelectorAll('.btn-option').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     currentBlendMode = btn.dataset.value;
+    clearPresetState();
     saveCurrentSettings();
     scheduleApply();
   });
@@ -923,23 +1014,23 @@
     const btn = e.target.closest('.preset-btn');
     if (!btn) return;
 
-    // Highlight active preset
-    document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-
     const preset = PRESETS[btn.dataset.preset];
     if (!preset) return;
 
     saveSnapshot('light'); // Preset change is light
-    applyPreset(preset);
+    activePresetId = btn.dataset.preset;
+    presetBaseSettings = getEditorSettings();
+    presetStrength.value = '100';
+    applyPresetStrength();
   });
 
-  function applyPreset(preset) {
-    const fullSettings = { ...DEFAULT_SETTINGS, ...preset };
-    loadSettingsIntoUI(fullSettings);
-    saveCurrentSettings();
-    scheduleApply();
-  }
+  presetStrength.addEventListener('input', () => {
+    applyPresetStrength();
+  });
+
+  presetStrength.addEventListener('change', () => {
+    saveSnapshot('light');
+  });
 
   // ===== Undo 시스템 =====
   function saveSnapshot() {
