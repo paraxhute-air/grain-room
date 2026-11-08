@@ -1559,15 +1559,62 @@
   btnCrop.addEventListener('click', () => {
     if (currentIndex === -1) return;
     isCropping = true;
+    placeCropRatios();
     cropOverlay.classList.remove('hidden');
     cropRatios.classList.remove('hidden');
     btnCrop.classList.add('active');
-    resetCropRect();
     resetCropActionsPosition();
+    setDefaultCropRect();
   });
+
+  // 모바일에서는 비율 선택을 자르기 오버레이 안(캔버스 위)에 띄우고, PC에서는 툴바에 둔다.
+  // 오버레이의 자식으로 두어야 iOS Safari에서도 어두운 덮개 위에 확실히 보인다.
+  const cropRatiosHome = { parent: cropRatios.parentNode, next: cropRatios.nextSibling };
+  const mobileCropQuery = window.matchMedia('(max-width: 768px)');
+  function placeCropRatios() {
+    if (mobileCropQuery.matches) {
+      if (cropRatios.parentNode !== cropOverlay) cropOverlay.appendChild(cropRatios);
+    } else if (cropRatios.parentNode !== cropRatiosHome.parent) {
+      cropRatiosHome.parent.insertBefore(cropRatios, cropRatiosHome.next);
+    }
+  }
 
   function resetCropRect() {
     cropRectData = { x: 0, y: 0, w: 0, h: 0 };
+    updateCropRectUI();
+  }
+
+  // 오버레이 기준 이미지 영역
+  function getCropImageBounds() {
+    const o = cropOverlay.getBoundingClientRect();
+    const c = canvas.getBoundingClientRect();
+    return { minX: c.left - o.left, minY: c.top - o.top, maxX: c.right - o.left, maxY: c.bottom - o.top };
+  }
+
+  // 자르기 시작/비율 변경 시 이미지 가운데에 기본 선택 영역을 보여준다
+  function setDefaultCropRect() {
+    const b = getCropImageBounds();
+    const overlayTop = cropOverlay.getBoundingClientRect().top;
+    let top = b.minY;
+    let bottom = b.maxY;
+    // 캔버스 위에 떠 있는 비율 선택 막대와 취소/적용 막대에 모서리가 가리지 않도록 그 사이에 배치
+    if (cropRatios.parentNode === cropOverlay) {
+      const ratiosBottom = cropRatios.getBoundingClientRect().bottom - overlayTop + 10;
+      if (bottom - ratiosBottom > 80) top = Math.max(top, ratiosBottom);
+    }
+    const actionsTop = cropActionsBar.getBoundingClientRect().top - overlayTop - 10;
+    if (actionsTop - top > 80) bottom = Math.min(bottom, actionsTop);
+    const availW = b.maxX - b.minX;
+    const availH = bottom - top;
+    let w = availW * 0.8;
+    let h = availH * 0.8;
+    if (currentCropRatio === '1:1' || currentCropRatio === 'circle') {
+      w = h = Math.min(availW, availH) * 0.8;
+    } else if (currentCropRatio === '16:9') {
+      w = Math.min(availW, availH * 16 / 9) * 0.8;
+      h = w * 9 / 16;
+    }
+    cropRectData = { x: b.minX + (availW - w) / 2, y: top + (availH - h) / 2, w, h };
     updateCropRectUI();
   }
 
@@ -1586,7 +1633,7 @@
     cropRatios.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentCropRatio = btn.dataset.ratio;
-    resetCropRect();
+    setDefaultCropRect();
   });
 
   btnCropCancel.addEventListener('click', () => {
@@ -1595,6 +1642,13 @@
 
   // 적용/취소 버튼 클릭 시 overlay의 mousedown이 발동되지 않도록 차단
   cropActionsBar.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+  });
+  cropActionsBar.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+  });
+  // 오버레이 안에 떠 있는 비율 선택 막대를 눌러도 새 영역 선택이 시작되지 않도록 차단
+  cropRatios.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
   });
 
@@ -1671,16 +1725,47 @@
     isDraggingRect = false;
   }
 
-  cropOverlay.addEventListener('mousedown', (e) => {
+  // 모서리 근처(손가락 기준 넉넉하게)를 누르면 크기 조절
+  const CROP_HANDLE_HIT = 24;
+  let cropRectBeforeGesture = null;
+
+  function getCropCornerAt(x, y) {
+    const { x: rx, y: ry, w, h } = cropRectData;
+    if (w <= 0 || h <= 0) return null;
+    const corners = [
+      { name: 'nw', x: rx, y: ry, ox: rx + w, oy: ry + h },
+      { name: 'ne', x: rx + w, y: ry, ox: rx, oy: ry + h },
+      { name: 'sw', x: rx, y: ry + h, ox: rx + w, oy: ry },
+      { name: 'se', x: rx + w, y: ry + h, ox: rx, oy: ry },
+    ];
+    let best = null;
+    corners.forEach((c) => {
+      const d = Math.hypot(c.x - x, c.y - y);
+      if (d <= CROP_HANDLE_HIT && (!best || d < best.d)) best = { ...c, d };
+    });
+    return best;
+  }
+
+  function isInsideCropRect(x, y) {
+    return cropRectData.w > 0 &&
+      x >= cropRectData.x && x <= cropRectData.x + cropRectData.w &&
+      y >= cropRectData.y && y <= cropRectData.y + cropRectData.h;
+  }
+
+  cropOverlay.addEventListener('pointerdown', (e) => {
     if (!isCropping) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     const rect = cropOverlay.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+    cropRectBeforeGesture = { ...cropRectData };
 
-    // Check if clicked inside existing crop rect to drag
-    if (cropRectData.w > 0 && 
-        mouseX >= cropRectData.x && mouseX <= cropRectData.x + cropRectData.w &&
-        mouseY >= cropRectData.y && mouseY <= cropRectData.y + cropRectData.h) {
+    const corner = getCropCornerAt(mouseX, mouseY);
+    if (corner) {
+      // 반대쪽 모서리를 기준점으로 고정하고 크기 조절
+      isDraggingRect = false;
+      cropStart = { x: corner.ox, y: corner.oy };
+    } else if (isInsideCropRect(mouseX, mouseY)) {
       isDraggingRect = true;
       dragOffset = { x: mouseX - cropRectData.x, y: mouseY - cropRectData.y };
     } else {
@@ -1689,13 +1774,23 @@
       cropStart = { x: mouseX, y: mouseY };
       cropRectData = { x: mouseX, y: mouseY, w: 0, h: 0 };
     }
+    try { cropOverlay.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    e.preventDefault();
   });
 
-  cropOverlay.addEventListener('mousemove', (e) => {
+  cropOverlay.addEventListener('pointermove', (e) => {
     if (!isCropping) return;
     const rect = cropOverlay.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+
+    // 마우스를 올렸을 때 커서로 가능한 동작을 안내
+    if (!isDraggingRect && !cropStart && e.pointerType === 'mouse') {
+      const corner = getCropCornerAt(mouseX, mouseY);
+      cropOverlay.style.cursor = corner
+        ? (corner.name === 'nw' || corner.name === 'se' ? 'nwse-resize' : 'nesw-resize')
+        : (isInsideCropRect(mouseX, mouseY) ? 'move' : 'crosshair');
+    }
     
     // Calculate Image Bounds relative to Overlay
     const canvasRect = canvas.getBoundingClientRect();
@@ -1773,10 +1868,19 @@
     }
   });
 
-  cropOverlay.addEventListener('mouseup', () => {
+  function endCropGesture() {
+    // 실수로 짧게 탭해서 선택 영역이 사라지면 이전 영역으로 되돌린다
+    if (cropStart && (cropRectData.w < 10 || cropRectData.h < 10) && cropRectBeforeGesture && cropRectBeforeGesture.w >= 10) {
+      cropRectData = { ...cropRectBeforeGesture };
+      updateCropRectUI();
+    }
     cropStart = null;
     isDraggingRect = false;
-  });
+    cropRectBeforeGesture = null;
+  }
+
+  cropOverlay.addEventListener('pointerup', endCropGesture);
+  cropOverlay.addEventListener('pointercancel', endCropGesture);
 
   btnCropApply.addEventListener('click', () => {
     applyCrop();
