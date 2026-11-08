@@ -1591,7 +1591,7 @@
     return { minX: c.left - o.left, minY: c.top - o.top, maxX: c.right - o.left, maxY: c.bottom - o.top };
   }
 
-  // 자르기 시작/비율 변경 시 이미지 가운데에 기본 선택 영역을 보여준다
+  // 자르기 시작/비율 변경 시 이미지 가운데에 기본 선택 영역(이미지의 70%)을 보여준다
   function setDefaultCropRect() {
     const b = getCropImageBounds();
     const overlayTop = cropOverlay.getBoundingClientRect().top;
@@ -1606,12 +1606,13 @@
     if (actionsTop - top > 80) bottom = Math.min(bottom, actionsTop);
     const availW = b.maxX - b.minX;
     const availH = bottom - top;
-    let w = availW * 0.8;
-    let h = availH * 0.8;
+    const DEFAULT_CROP_SCALE = 0.7;
+    let w = availW * DEFAULT_CROP_SCALE;
+    let h = availH * DEFAULT_CROP_SCALE;
     if (currentCropRatio === '1:1' || currentCropRatio === 'circle') {
-      w = h = Math.min(availW, availH) * 0.8;
+      w = h = Math.min(availW, availH) * DEFAULT_CROP_SCALE;
     } else if (currentCropRatio === '16:9') {
-      w = Math.min(availW, availH * 16 / 9) * 0.8;
+      w = Math.min(availW, availH * 16 / 9) * DEFAULT_CROP_SCALE;
       h = w * 9 / 16;
     }
     cropRectData = { x: b.minX + (availW - w) / 2, y: top + (availH - h) / 2, w, h };
@@ -2186,7 +2187,7 @@
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
-              text: 'enhanced by grain room.' // 공유 시 같이 전송될 텍스트 (카카오톡 등에서 표시됨)
+              text: 'enhanced by grain-room' // 공유 시 같이 전송될 텍스트 (줄바꿈·공백 없이 한 줄)
             });
             downloadModal.classList.add('hidden');
           } else {
@@ -2644,12 +2645,14 @@
 
       ctx.translate(x, y);
       if (isVertical) {
-        ctx.rotate(Math.PI / 2);
+        const isRightSide = pos === 'top-right' || pos === 'bottom-right';
+        // 왼쪽은 위→아래로 읽히게(+90°), 오른쪽은 그보다 180° 돌려 아래→위로 읽히게(-90°)
+        ctx.rotate(isRightSide ? -Math.PI / 2 : Math.PI / 2);
         // Adjust for rotation
         if (pos === 'top-left') { textAlign = 'left'; textBaseline = 'bottom'; }
-        else if (pos === 'top-right') { textAlign = 'left'; textBaseline = 'top'; }
+        else if (pos === 'top-right') { textAlign = 'right'; textBaseline = 'bottom'; }
         else if (pos === 'bottom-left') { textAlign = 'right'; textBaseline = 'bottom'; }
-        else { textAlign = 'right'; textBaseline = 'top'; }
+        else { textAlign = 'left'; textBaseline = 'bottom'; }
       }
 
       ctx.textAlign = textAlign;
