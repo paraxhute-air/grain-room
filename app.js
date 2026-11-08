@@ -851,12 +851,12 @@
 
   // Mobile range controls: keep dragging available while providing precise
   // single-step adjustments with comfortably sized arrow buttons.
-  function setupSliderSteppers() {
-    sliders.forEach((slider) => {
+  function setupSliderSteppers(targetSliders) {
+    targetSliders.forEach((slider) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'slider-stepper';
 
-      const label = slider.closest('.control-group')?.querySelector('.label-text')?.textContent.trim() || '값';
+      const label = slider.closest('.control-group, .preset-strength')?.querySelector('.label-text')?.textContent.trim() || '값';
       const createButton = (direction, labelText) => {
         const button = document.createElement('button');
         button.type = 'button';
@@ -908,7 +908,9 @@
     });
   }
 
-  setupSliderSteppers();
+  // 프리셋 강도도 같은 화살표(10단위 이동)를 쓰지만, 위 sliders 목록에는 넣지 않는다
+  // (sliders의 input 이벤트는 프리셋 선택을 해제하기 때문).
+  setupSliderSteppers([...sliders, presetStrength]);
 
   sliders.forEach((slider) => {
     slider.addEventListener('input', () => {
@@ -956,6 +958,8 @@
     if (hasPreset) {
       presetStrengthVal.textContent = presetStrength.value;
     }
+    // 코드로 값을 바꾼 경우에도 화살표 활성/비활성 상태를 맞춘다
+    presetStrength.dispatchEvent(new Event('sliderstepperchange'));
   }
 
   function clearPresetState() {
