@@ -2937,6 +2937,32 @@
     }
   }
 
+  // 마지막 업데이트(배포) 시각 표시. 탭/클릭하면 커밋 번호를 보여주거나 숨긴다.
+  function initBuildStamp() {
+    const info = window.GRAIN_ROOM_BUILD;
+    const stamps = document.querySelectorAll('.build-stamp');
+    if (!info || !info.updated || !stamps.length) return;
+
+    let showCommit = false;
+    const render = () => {
+      const text = `Updated ${info.updated}` + (showCommit && info.commit ? ` · ${info.commit}` : '');
+      stamps.forEach((el) => {
+        el.textContent = text;
+        el.setAttribute('aria-expanded', String(showCommit));
+      });
+    };
+
+    stamps.forEach((el) => {
+      el.hidden = false;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation(); // 첫 화면 업로드 상자의 파일 선택이 열리지 않도록
+        showCommit = !showCommit;
+        render();
+      });
+    });
+    render();
+  }
+
   function initButtonAccessibility() {
     document
       .querySelectorAll('.btn-group:not(.zoom-controls) .btn-option, .preset-btn')
@@ -3309,6 +3335,7 @@
   
   initMobileDownloadUI();
   initButtonAccessibility();
+  initBuildStamp();
   restorePersistedImages();
 
 })();

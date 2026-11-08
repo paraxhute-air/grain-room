@@ -46,6 +46,7 @@
         <h2>이미지를 드롭하세요</h2>
         <p>또는 클릭하여 파일 선택</p>
         <p class="formats">PNG, JPG, WEBP</p>
+        <button type="button" class="build-stamp build-stamp--dropzone" hidden aria-label="업데이트 정보"></button>
       </div>
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
     </div>
@@ -555,6 +556,7 @@
     <footer class="pc-footer">
       <div class="footer-inner">
         &copy; kanesu industry. All Rights Reserved.
+        <button type="button" class="build-stamp build-stamp--footer" hidden aria-label="업데이트 정보"></button>
       </div>
     </footer>
   </div>
@@ -567,6 +569,8 @@
     </div>
   </div>
 
+  <!-- Generated at deploy time by scripts/build-info.mjs (absent when opened locally) -->
+  <script src="build-info.js"></script>
   <script src="app.js"></script>
   <div id="toast" class="toast hidden"></div>
   <!-- Font Preloader (ensures fonts are ready for canvas) -->
