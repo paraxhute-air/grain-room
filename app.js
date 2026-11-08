@@ -320,54 +320,73 @@
 
   // ===== Presets =====
   const PRESETS = {
-    film35mm: {
+    golden200: {
       grainIntensity: 35, grainSize: 1, blendMode: 'overlay',
       brightness: 5, contrast: 10, saturation: -10, temperature: 10,
       sepia: 8, vignette: 20, fade: 5,
     },
-    vintage: {
-      grainIntensity: 50, grainSize: 2, blendMode: 'multiply',
-      brightness: 10, contrast: -5, saturation: -30, temperature: 25,
-      sepia: 35, vignette: 30, fade: 15,
-    },
-    noir: {
+    silverStreet: {
       grainIntensity: 45, grainSize: 1, blendMode: 'overlay',
       brightness: -5, contrast: 30, saturation: -100, temperature: 0,
       sepia: 0, vignette: 40, fade: 0,
     },
-    faded: {
+    vintageWarm: {
+      grainIntensity: 50, grainSize: 2, blendMode: 'multiply',
+      brightness: 10, contrast: -5, saturation: -30, temperature: 25,
+      sepia: 35, vignette: 30, fade: 15,
+    },
+    softFade: {
       grainIntensity: 25, grainSize: 1, blendMode: 'screen',
       brightness: 15, contrast: -15, saturation: -20, temperature: 0,
       sepia: 5, vignette: 10, fade: 40,
     },
-    cinematic: {
-      grainIntensity: 20, grainSize: 1, blendMode: 'overlay',
-      brightness: -5, contrast: 20, saturation: -15, temperature: -20,
-      sepia: 0, vignette: 35, fade: 5,
+    ccdPop: {
+      grainIntensity: 25, grainSize: 1, blendMode: 'screen',
+      brightness: 8, contrast: 18, saturation: 28, temperature: -8,
+      sepia: 0, vignette: 5, fade: 5,
+      cyan: 8, magenta: 8, yellow: -5, key: 0,
     },
-    lofi: {
-      grainIntensity: 60, grainSize: 3, blendMode: 'overlay',
-      brightness: 10, contrast: -10, saturation: -25, temperature: 15,
-      sepia: 20, vignette: 25, fade: 25,
-      cyan: 0, magenta: 0, yellow: 0, key: 0,
-    },
-    forest: {
-      grainIntensity: 30, grainSize: 2, blendMode: 'multiply',
-      brightness: -2, contrast: 2, saturation: 5, temperature: -5,
-      sepia: 0, vignette: 20, fade: 5,
-      cyan: 10, magenta: -5, yellow: 10, key: 5,
-    },
-    tokyo: {
+    tokyoVivid: {
       grainIntensity: 30, grainSize: 1, blendMode: 'overlay',
-      brightness: 5, contrast: 25, saturation: 15, temperature: -20,
+      brightness: 5, contrast: 25, saturation: 25, temperature: -20,
       sepia: 0, vignette: 20, fade: 5,
-      cyan: 15, magenta: 5, yellow: -10, key: 0,
+      cyan: 15, magenta: 8, yellow: -12, key: 0,
     },
-    california: {
+    cityPop: {
+      grainIntensity: 20, grainSize: 1, blendMode: 'screen',
+      brightness: 12, contrast: 5, saturation: 18, temperature: 12,
+      sepia: 8, vignette: 5, fade: 18,
+      cyan: 8, magenta: 15, yellow: 5, key: -3,
+    },
+    hongKongNoir: {
+      grainIntensity: 40, grainSize: 2, blendMode: 'multiply',
+      brightness: -10, contrast: 28, saturation: -18, temperature: 8,
+      sepia: 10, vignette: 38, fade: 4,
+      cyan: -8, magenta: -5, yellow: 12, key: 12,
+    },
+    californiaSun: {
       grainIntensity: 20, grainSize: 1, blendMode: 'screen',
       brightness: 10, contrast: -5, saturation: 10, temperature: 15,
       sepia: 5, vignette: 10, fade: 15,
       cyan: -5, magenta: 5, yellow: 15, key: -2,
+    },
+    forestMist: {
+      grainIntensity: 30, grainSize: 2, blendMode: 'multiply',
+      brightness: 4, contrast: -8, saturation: -5, temperature: -12,
+      sepia: 0, vignette: 18, fade: 18,
+      cyan: 12, magenta: -8, yellow: 8, key: 5,
+    },
+    manhattanSoft: {
+      grainIntensity: 18, grainSize: 1, blendMode: 'screen',
+      brightness: 8, contrast: -12, saturation: -25, temperature: 18,
+      sepia: 18, vignette: 12, fade: 20,
+      cyan: -4, magenta: 4, yellow: 8, key: 0,
+    },
+    midnightBlue: {
+      grainIntensity: 28, grainSize: 1, blendMode: 'overlay',
+      brightness: -8, contrast: 18, saturation: -30, temperature: -25,
+      sepia: 0, vignette: 28, fade: 8,
+      cyan: 18, magenta: -5, yellow: -12, key: 8,
     },
   };
 

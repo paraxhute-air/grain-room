@@ -926,7 +926,7 @@ body.light-mode .theme-toggle .sun { display: block; }
 /* ===== Presets Grid ===== */
 .presets-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -934,14 +934,16 @@ body.light-mode .theme-toggle .sun { display: block; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 4px 8px;
+  gap: 5px;
+  min-height: 84px;
+  padding: 8px 3px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.68rem;
+  line-height: 1.2;
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
@@ -969,40 +971,52 @@ body.light-mode .theme-toggle .sun { display: block; }
   overflow: hidden;
 }
 
-.preset-preview.film35mm {
+.preset-preview.golden200 {
   background: linear-gradient(135deg, #b8a080, #8b7355);
 }
 
-.preset-preview.vintage {
+.preset-preview.silver-street {
+  background: linear-gradient(135deg, #777777, #161616);
+}
+
+.preset-preview.vintage-warm {
   background: linear-gradient(135deg, #c4956a, #7a5c3e);
 }
 
-.preset-preview.noir {
-  background: linear-gradient(135deg, #555, #1a1a1a);
-}
-
-.preset-preview.faded {
+.preset-preview.soft-fade {
   background: linear-gradient(135deg, #a8b0c0, #7a8090);
 }
 
-.preset-preview.cinematic {
-  background: linear-gradient(135deg, #2a4a6b, #1a2a3b);
+.preset-preview.ccd-pop {
+  background: linear-gradient(135deg, #53c5e8, #fd7aa6);
 }
 
-.preset-preview.lofi {
-  background: linear-gradient(135deg, #c4a0d0, #8070a0);
-}
-
-.preset-preview.forest {
-  background: linear-gradient(135deg, #2d5a27, #1b3a1a);
-}
-
-.preset-preview.tokyo {
+.preset-preview.tokyo-vivid {
   background: linear-gradient(135deg, #ff4b2b, #4a90e2);
 }
 
-.preset-preview.california {
+.preset-preview.city-pop {
+  background: linear-gradient(135deg, #f8a65b, #d35ca5 52%, #4bb7c5);
+}
+
+.preset-preview.hong-kong-noir {
+  background: linear-gradient(135deg, #c96938, #294536 55%, #151719);
+}
+
+.preset-preview.california-sun {
   background: linear-gradient(135deg, #fdbb2d, #22c1c3);
+}
+
+.preset-preview.forest-mist {
+  background: linear-gradient(135deg, #7ca69a, #29483d);
+}
+
+.preset-preview.manhattan-soft {
+  background: linear-gradient(135deg, #d7b999, #806955);
+}
+
+.preset-preview.midnight-blue {
+  background: linear-gradient(135deg, #2c537c, #11192b);
 }
 
 /* ===== Modal ===== */
@@ -1276,10 +1290,6 @@ body.light-mode .theme-toggle .sun { display: block; }
 
   .drop-zone {
     min-height: 60vh;
-  }
-
-  .presets-grid {
-    grid-template-columns: repeat(3, 1fr);
   }
 
   .canvas-actions {
