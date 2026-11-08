@@ -1539,7 +1539,7 @@ body.light-mode .theme-toggle .sun { display: block; }
     height: auto;
     /* Keep the sheet short so the photo stays visible; content scrolls inside. */
     --sheet-nav-space: calc(78px + env(safe-area-inset-bottom, 0px));
-    max-height: calc(min(40dvh, 360px) + var(--sheet-nav-space) + 24px);
+    max-height: calc(min(30dvh, 260px) + var(--sheet-nav-space) + 24px);
     display: flex;
     flex-direction: column;
     border-radius: 20px 20px 0 0;
@@ -1608,6 +1608,22 @@ body.light-mode .theme-toggle .sun { display: block; }
 
   body.light-mode .controls-panel::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* Soft fade at the edge that still has hidden content (iOS hides scrollbars when idle) */
+  .controls-panel.fade-bottom {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
+  }
+
+  .controls-panel.fade-top {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px);
+    mask-image: linear-gradient(to bottom, transparent, #000 24px);
+  }
+
+  .controls-panel.fade-top.fade-bottom {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 24px, #000 calc(100% - 36px), transparent);
   }
 
   /* Only one section is shown at a time on mobile; no trailing gap in the scroll area */

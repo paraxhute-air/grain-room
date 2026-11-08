@@ -3032,8 +3032,27 @@
     const navScroll = document.getElementById('navScroll');
     const controlsSidebar = document.querySelector('.controls-sidebar');
     const controlSections = Array.from(document.querySelectorAll('.control-section'));
+    const controlsPanel = controlsSidebar ? controlsSidebar.querySelector('.controls-panel') : null;
 
     if (!navScroll || !mobileOverlay || !controlsSidebar) return;
+
+    // 시트 안에 가려진 내용이 있으면 위/아래 가장자리에 페이드를 표시 (iOS는 스크롤바가 평소에 안 보임)
+    function updateSheetFade() {
+      if (!controlsPanel) return;
+      const isMobileSheet = window.innerWidth <= 768;
+      const maxScroll = controlsPanel.scrollHeight - controlsPanel.clientHeight;
+      controlsPanel.classList.toggle('fade-top', isMobileSheet && controlsPanel.scrollTop > 2);
+      controlsPanel.classList.toggle('fade-bottom', isMobileSheet && controlsPanel.scrollTop < maxScroll - 2);
+    }
+
+    if (controlsPanel) {
+      controlsPanel.addEventListener('scroll', updateSheetFade, { passive: true });
+      if ('ResizeObserver' in window) {
+        const fadeObserver = new ResizeObserver(updateSheetFade);
+        fadeObserver.observe(controlsPanel);
+        controlSections.forEach((section) => fadeObserver.observe(section));
+      }
+    }
 
     // 1. 동적으로 탭(버튼) 생성
     controlSections.forEach((section, index) => {
@@ -3074,6 +3093,10 @@
       // 오버레이 및 바텀 시트 올리기
       mobileOverlay.classList.add('active');
       controlsSidebar.classList.add('active');
+
+      // 새 탭은 맨 위부터 보여주고 페이드 상태 갱신
+      if (controlsPanel) controlsPanel.scrollTop = 0;
+      requestAnimationFrame(updateSheetFade);
 
       // 탭이 잘 보이도록 스크롤 이동
       tabElem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
@@ -3123,6 +3146,7 @@
 
     // 5. 화면 크기 변경 대처 (데스크톱으로 돌아갈 때 초기화)
     window.addEventListener('resize', () => {
+      updateSheetFade();
       if (window.innerWidth > 768) {
         mobileOverlay.classList.remove('active');
         controlsSidebar.classList.remove('active');
