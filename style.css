@@ -286,11 +286,11 @@ body.light-mode .logo svg {
 .text-input:focus {
   border-color: #ef4444;
   background: rgba(128, 128, 128, 0.12);
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  box-shadow: none;
 }
 
-/* Text fields already show focus with the red border above; skip the global
-   focus outline so the two don't stack into a double border (iOS applies it on tap). */
+/* Text fields show focus with the red border only; skip the global focus
+   outline so it doesn't stack into a double border (iOS applies it on tap). */
 .text-input:focus-visible {
   outline: none;
 }
@@ -819,7 +819,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   height: 14px;
   border-radius: 50%;
   background: #dc2626;
-  border: 2px solid var(--bg-primary);
+  border: 2px solid #ffffff; /* White ring in both themes */
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: var(--transition);
@@ -835,7 +835,7 @@ body.light-mode .theme-toggle .sun { display: block; }
   height: 14px;
   border-radius: 50%;
   background: #dc2626;
-  border: 2px solid var(--bg-primary);
+  border: 2px solid #ffffff; /* White ring in both themes */
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }

@@ -2750,6 +2750,12 @@
       const pad = Math.round(8 * scale);
       const noteW = metrics.width;
       const noteH = fontSize;
+      // 라벨 스타일은 글자 주변 여백을 넉넉하게 (글자 방향 padX, 그 수직 방향 padY)
+      const isLabel = style === 'label';
+      const padX = isLabel ? Math.round(18 * scale) : pad;
+      const padY = isLabel ? Math.round(10 * scale) : Math.round(pad / 2);
+      const hitPadX = padX;
+      const hitPadY = Math.max(padY, isLabel ? 0 : pad);
       
       // Calculate Bounding Box (for interaction)
       let bx = 0, by = 0;
@@ -2760,10 +2766,10 @@
       else if (textBaseline === 'middle') by = -noteH / 2;
 
       const fullBox = {
-        x: x + (isVertical ? 0 : bx) - pad,
-        y: y + (isVertical ? bx : by) - pad,
-        w: (isVertical ? noteH : noteW) + pad * 2,
-        h: (isVertical ? noteW : noteH) + pad * 2
+        x: x + (isVertical ? 0 : bx) - (isVertical ? hitPadY : hitPadX),
+        y: y + (isVertical ? bx : by) - (isVertical ? hitPadX : hitPadY),
+        w: (isVertical ? noteH + hitPadY * 2 : noteW + hitPadX * 2),
+        h: (isVertical ? noteW + hitPadX * 2 : noteH + hitPadY * 2)
       };
       
       // Actually, it's easier to keep the bounding box in local translated coordinates for some parts
@@ -2773,7 +2779,7 @@
       // Draw Background/Label
       if (style === 'label') {
         ctx.fillStyle = 'rgba(0,0,0,0.85)';
-        ctx.fillRect(bx - pad, by - pad/2, noteW + pad * 2, noteH + pad);
+        ctx.fillRect(bx - padX, by - padY, noteW + padX * 2, noteH + padY * 2);
         ctx.fillStyle = '#ffffff';
       } else if (style === 'black') {
         ctx.fillStyle = 'rgba(0,0,0,0.85)';
@@ -2791,13 +2797,13 @@
         ctx.strokeStyle = '#ef4444';
         ctx.setLineDash([10, 5]);
         ctx.lineWidth = 3;
-        ctx.strokeRect(bx - pad, by - pad/2, noteW + pad * 2, noteH + pad);
+        ctx.strokeRect(bx - padX, by - padY, noteW + padX * 2, noteH + padY * 2);
         ctx.setLineDash([]);
         
         // Resize Handle (Bottom Right)
         const hSize = 8 * scale;
         ctx.fillStyle = '#ef4444';
-        ctx.fillRect(bx + noteW + pad - hSize/2, by + noteH + pad/2 - hSize/2, hSize, hSize);
+        ctx.fillRect(bx + noteW + padX - hSize/2, by + noteH + padY - hSize/2, hSize, hSize);
       }
 
       ctx.restore();
