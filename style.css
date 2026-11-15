@@ -973,9 +973,9 @@ body.light-mode .theme-toggle .sun { display: block; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  min-height: 84px;
-  padding: 8px 3px;
+  gap: 4px;
+  min-height: 0;
+  padding: 7px 3px 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1004,8 +1004,8 @@ body.light-mode .theme-toggle .sun { display: block; }
 
 .preset-preview {
   display: block;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 6px;
   overflow: hidden;
 }
@@ -1056,6 +1056,52 @@ body.light-mode .theme-toggle .sun { display: block; }
 
 .preset-preview.midnight-blue {
   background: linear-gradient(135deg, #2c537c, #11192b);
+}
+
+.preset-preview.none {
+  position: relative;
+  background: transparent;
+  border: 1.5px dashed currentColor;
+  opacity: 0.7;
+}
+
+.preset-preview.none::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 15%;
+  width: 1.5px;
+  height: 70%;
+  background: currentColor;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.preset-preview.emerald-400 {
+  background: linear-gradient(135deg, #79b38a, #2e5f53);
+}
+
+.preset-preview.rose-800 {
+  background: linear-gradient(135deg, #e7a19a, #8e3a3f);
+}
+
+.preset-preview.lilac-160 {
+  background: linear-gradient(135deg, #d9c3e8, #7b6aa6);
+}
+
+.preset-preview.warm-mono {
+  background: linear-gradient(135deg, #d8c29f, #4a3b2c);
+}
+
+.preset-preview.street-positive {
+  background: linear-gradient(135deg, #e0893a, #2a1c17);
+}
+
+.preset-preview.amalfi-blue {
+  background: linear-gradient(135deg, #3aa9e0, #f3d27a);
+}
+
+.preset-preview.cross-100 {
+  background: linear-gradient(135deg, #e6e45a, #2a5fa8);
 }
 
 .preset-strength {
@@ -1991,6 +2037,14 @@ body.light-mode .theme-toggle .sun { display: block; }
   
   .drop-zone-content h2 {
     font-size: 1.2rem;
+  }
+
+  /* Preset names fit on one line at phone width (the PC sidebar is narrower and wraps instead) */
+  .preset-btn > span:last-child {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .build-stamp--dropzone:not([hidden]) {

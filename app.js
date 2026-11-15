@@ -117,6 +117,7 @@
   let currentBlendMode = 'overlay';
   let activePresetId = null;
   let presetBaseSettings = null;
+  let currentTone = null; // tone values of the image being edited (set once DEFAULT_TONE exists)
   let rafId = null;
   let currentZoom = 1.0;
   let isCropping = false;
@@ -227,11 +228,33 @@
   if (textNote) textNote.style.fontFamily = "'Nanum Pen Script', sans-serif";
 
   // Default settings for a new image
+  // Film tone controls used only by presets (no sliders): split toning by
+  // brightness (RGB push in shadows / highlights, midtones left alone so skin
+  // shifts much less) and per-channel tone curves (lifted blacks, soft highlight
+  // shoulder). All 0 = no effect.
+  const TONE_KEYS = [
+    'toneShadowR', 'toneShadowG', 'toneShadowB',
+    'toneHighlightR', 'toneHighlightG', 'toneHighlightB',
+    'toneLiftR', 'toneLiftG', 'toneLiftB',
+    'toneShoulder'
+  ];
+  const DEFAULT_TONE = Object.fromEntries(TONE_KEYS.map((k) => [k, 0]));
+  function pickTone(settings) {
+    const tone = {};
+    TONE_KEYS.forEach((k) => { tone[k] = Number(settings && settings[k]) || 0; });
+    return tone;
+  }
+  function hasTone(tone) {
+    return !!tone && TONE_KEYS.some((k) => tone[k] !== 0);
+  }
+  currentTone = { ...DEFAULT_TONE };
+
   const DEFAULT_SETTINGS = {
     grainIntensity: 30, grainSize: 2, blendMode: 'overlay',
     brightness: 0, contrast: 0, saturation: 0, temperature: 0,
     sepia: 0, vignette: 0, fade: 0,
     cyan: 0, magenta: 0, yellow: 0, key: 0,
+    ...DEFAULT_TONE,
     frame: 'white',
     frameEnable: false,
     frameMargin: 'small'
@@ -396,6 +419,66 @@
       brightness: -6, contrast: 14, saturation: -23, temperature: -19,
       sepia: 0, vignette: 21, fade: 6,
       cyan: 14, magenta: -4, yellow: -9, key: 6,
+    },
+    // ----- Film-character presets (use the tone controls) -----
+    emerald400: { // green-leaning everyday film
+      grainIntensity: 30, grainSize: 1, blendMode: 'overlay',
+      brightness: 3, contrast: 8, saturation: 6, temperature: 0,
+      sepia: 0, vignette: 10, fade: 0,
+      cyan: 0, magenta: 0, yellow: 0, key: 0,
+      toneShadowR: -8, toneShadowG: 8, toneShadowB: -2,
+      toneHighlightR: -12, toneHighlightG: 10, toneHighlightB: -4,
+      toneLiftR: 4, toneLiftG: 10, toneLiftB: 6, toneShoulder: 30,
+    },
+    rose800: { // expired / tungsten-balanced rose cast, coarse grain
+      grainIntensity: 40, grainSize: 2, blendMode: 'overlay',
+      brightness: 3, contrast: 4, saturation: -4, temperature: 3,
+      sepia: 0, vignette: 16, fade: 0,
+      cyan: -6, magenta: 0, yellow: 0, key: 0,
+      toneShadowR: 8, toneShadowG: -2, toneShadowB: 3,
+      toneHighlightR: 18, toneHighlightG: -5, toneHighlightB: 3,
+      toneLiftR: 12, toneLiftG: 4, toneLiftB: 7, toneShoulder: 40,
+    },
+    lilac160: { // faded violet shift
+      grainIntensity: 25, grainSize: 1, blendMode: 'screen',
+      brightness: 4, contrast: -6, saturation: -12, temperature: -2,
+      sepia: 0, vignette: 8, fade: 0,
+      cyan: 0, magenta: 0, yellow: 0, key: 0,
+      toneShadowR: 3, toneShadowG: -3, toneShadowB: 10,
+      toneHighlightR: 10, toneHighlightG: -8, toneHighlightB: 14,
+      toneLiftR: 12, toneLiftG: 8, toneLiftB: 18, toneShoulder: 35,
+    },
+    warmMono: { // sepia-toned black & white print
+      grainIntensity: 45, grainSize: 2, blendMode: 'overlay',
+      brightness: 2, contrast: 16, saturation: -100, temperature: 0,
+      sepia: 40, vignette: 25, fade: 0,
+      cyan: 0, magenta: 0, yellow: 0, key: 0,
+      toneLiftR: 14, toneLiftG: 10, toneLiftB: 6, toneShoulder: 30,
+    },
+    streetPositive: { // punchy positive film: deep contrast, warm light, cool shadows
+      grainIntensity: 35, grainSize: 1, blendMode: 'overlay',
+      brightness: -2, contrast: 30, saturation: 16, temperature: 4,
+      sepia: 0, vignette: 30, fade: 0,
+      cyan: -4, magenta: 4, yellow: 6, key: 5,
+      toneShadowR: -2, toneShadowG: 0, toneShadowB: 5,
+      toneHighlightR: 6, toneHighlightG: 2, toneHighlightB: -3, toneShoulder: 20,
+    },
+    amalfiBlue: { // bright Mediterranean blues, sunny highlights
+      grainIntensity: 15, grainSize: 1, blendMode: 'screen',
+      brightness: 8, contrast: 12, saturation: 26, temperature: 4,
+      sepia: 0, vignette: 6, fade: 4,
+      cyan: 5, magenta: 2, yellow: -2, key: -2,
+      toneShadowR: -3, toneShadowG: 2, toneShadowB: 6,
+      toneHighlightR: 3, toneHighlightG: 2, toneHighlightB: -2, toneShoulder: 20,
+    },
+    cross100: { // cross-processed: blue shadows, yellow-green highlights
+      grainIntensity: 30, grainSize: 1, blendMode: 'overlay',
+      brightness: 2, contrast: 28, saturation: 20, temperature: 0,
+      sepia: 0, vignette: 22, fade: 0,
+      cyan: 0, magenta: 0, yellow: 0, key: 0,
+      toneShadowR: -6, toneShadowG: 0, toneShadowB: 14,
+      toneHighlightR: 6, toneHighlightG: 16, toneHighlightB: -20,
+      toneLiftR: 0, toneLiftG: 0, toneLiftB: 8, toneShoulder: 10,
     },
   };
 
@@ -809,6 +892,7 @@
       frame: images[currentIndex].settings.frame || 'white',
       frameEnable: images[currentIndex].settings.frameEnable === true,
       frameMargin: images[currentIndex].settings.frameMargin || 'small',
+      ...currentTone,
       presetId: activePresetId,
       presetStrength: activePresetId ? Number(presetStrength.value) : null,
       presetBaseSettings: activePresetId ? { ...presetBaseSettings } : null
@@ -832,6 +916,7 @@
     magenta.value = s.magenta || 0;
     yellow.value = s.yellow || 0;
     key.value = s.key || 0;
+    currentTone = pickTone(s);
 
     currentBlendMode = s.blendMode;
     blendModeGroup.querySelectorAll('.btn-option').forEach((b) => {
@@ -947,6 +1032,7 @@
       magenta: Number(magenta.value),
       yellow: Number(yellow.value),
       key: Number(key.value),
+      ...currentTone,
     };
   }
 
@@ -954,7 +1040,10 @@
     const hasPreset = Boolean(activePresetId);
     presetStrengthControl.hidden = !hasPreset;
     document.querySelectorAll('.preset-btn').forEach((button) => {
-      button.classList.toggle('active', button.dataset.preset === activePresetId);
+      const isActive = activePresetId
+        ? button.dataset.preset === activePresetId
+        : button.dataset.preset === 'none';
+      button.classList.toggle('active', isActive);
     });
     if (hasPreset) {
       presetStrengthVal.textContent = presetStrength.value;
@@ -988,13 +1077,14 @@
 
     const targetSettings = { ...DEFAULT_SETTINGS, ...PRESETS[activePresetId] };
     const ratio = Number(presetStrength.value) / 100;
-    const mixedSettings = { ...presetBaseSettings };
-    Object.keys(presetBaseSettings).forEach((key) => {
+    const baseSettings = { ...DEFAULT_TONE, ...presetBaseSettings };
+    const mixedSettings = { ...baseSettings };
+    Object.keys(baseSettings).forEach((key) => {
       if (key === 'blendMode') {
         mixedSettings.blendMode = ratio >= 0.5 ? targetSettings.blendMode : presetBaseSettings.blendMode;
         return;
       }
-      mixedSettings[key] = Math.round(presetBaseSettings[key] + (targetSettings[key] - presetBaseSettings[key]) * ratio);
+      mixedSettings[key] = Math.round(baseSettings[key] + ((targetSettings[key] || 0) - baseSettings[key]) * ratio);
     });
 
     loadSettingsIntoUI(mixedSettings, { syncPreset: false });
@@ -1019,6 +1109,23 @@
   document.getElementById('presets').addEventListener('click', (e) => {
     const btn = e.target.closest('.preset-btn');
     if (!btn) return;
+
+    // "없음": 프리셋 적용 직전 설정으로 되돌리고 선택 해제.
+    // 프리셋이 이미 풀려 있으면(슬라이더를 만진 뒤 등) 화면에 슬라이더가 없는 필름 톤만 걷어낸다.
+    if (btn.dataset.preset === 'none') {
+      if (currentIndex === -1) return;
+      if (!activePresetId && !hasTone(currentTone)) return;
+      saveSnapshot('light');
+      if (activePresetId && presetBaseSettings) {
+        loadSettingsIntoUI({ ...DEFAULT_TONE, ...presetBaseSettings }, { syncPreset: false });
+      } else {
+        currentTone = { ...DEFAULT_TONE };
+      }
+      clearPresetState();
+      saveCurrentSettings();
+      scheduleApply();
+      return;
+    }
 
     const preset = PRESETS[btn.dataset.preset];
     if (!preset) return;
@@ -2387,6 +2494,61 @@
     renderImageToContext(ctx, imgData, w, h, false, textOverlay);
   }
 
+  // Brightness weights for split toning (index = luma 0..255).
+  // Shadows fade out by ~0.55, highlights start at ~0.68: midtones (most skin) stay untinted.
+  let toneWeightsCache = null;
+  function getToneWeights() {
+    if (toneWeightsCache) return toneWeightsCache;
+    const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const shadowW = new Float32Array(256);
+    const highW = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const l = i / 255;
+      shadowW[i] = 1 - smooth(0.12, 0.55, l);
+      highW[i] = smooth(0.68, 0.95, l);
+    }
+    toneWeightsCache = { shadowW, highW };
+    return toneWeightsCache;
+  }
+
+  // Per-luma RGB offsets (split toning pre-multiplied by the brightness weights) and
+  // per-channel curves, cached per tone so a render does only table lookups per pixel.
+  let toneTablesCache = { key: '', tables: null };
+  function getToneTables(tone) {
+    const key = TONE_KEYS.map((k) => tone[k]).join(',');
+    if (toneTablesCache.key === key) return toneTablesCache.tables;
+    const { shadowW, highW } = getToneWeights();
+    const addR = new Float32Array(256);
+    const addG = new Float32Array(256);
+    const addB = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      addR[i] = tone.toneShadowR * shadowW[i] + tone.toneHighlightR * highW[i];
+      addG[i] = tone.toneShadowG * shadowW[i] + tone.toneHighlightG * highW[i];
+      addB[i] = tone.toneShadowB * shadowW[i] + tone.toneHighlightB * highW[i];
+    }
+    const tables = {
+      addR, addG, addB,
+      curveR: buildToneCurve(tone.toneLiftR, tone.toneShoulder),
+      curveG: buildToneCurve(tone.toneLiftG, tone.toneShoulder),
+      curveB: buildToneCurve(tone.toneLiftB, tone.toneShoulder),
+    };
+    toneTablesCache = { key, tables };
+    return tables;
+  }
+
+  // Per-channel curve: soft highlight shoulder (0..100) then lifted black point (0..255).
+  function buildToneCurve(lift, shoulder) {
+    const curve = new Uint8ClampedArray(256);
+    const l = Math.max(0, lift) / 255;
+    const sh = Math.max(0, shoulder) / 100;
+    for (let i = 0; i < 256; i++) {
+      let x = i / 255;
+      if (sh > 0 && x > 0.65) x -= sh * (x - 0.65) * (x - 0.65);
+      curve[i] = (l + x * (1 - l)) * 255;
+    }
+    return curve;
+  }
+
   function renderImageToContext(targetCtx, imgData, w, h, isExport = false, overlayData = null) {
     // 0. Bypass Mode (only for main canvas interaction, not export)
     if (isBypassMode && !isExport) {
@@ -2439,6 +2601,14 @@
 
     // Contrast factor
     const contrastFactor = (259 * (con + 255)) / (255 * (259 - con));
+
+    // Film tone (preset-only): split toning weights + per-channel curves
+    const tone = isExport ? pickTone(s) : currentTone;
+    const toneActive = hasTone(tone);
+    let toneAddR, toneAddG, toneAddB, curveR, curveG, curveB;
+    if (toneActive) {
+      ({ addR: toneAddR, addG: toneAddG, addB: toneAddB, curveR, curveG, curveB } = getToneTables(tone));
+    }
 
     for (let i = 0; i < srcData.length; i += 4) {
       let r = srcData[i];
@@ -2505,6 +2675,21 @@
         r = 255 * (1 - c) * (1 - k);
         g = 255 * (1 - m) * (1 - k);
         b = 255 * (1 - y) * (1 - k);
+      }
+
+      // 6.6 Film tone: tint shadows/highlights by brightness, then tone curves
+      if (toneActive) {
+        let li = (0.2126 * r + 0.7152 * g + 0.0722 * b) | 0;
+        if (li < 0) li = 0; else if (li > 255) li = 255;
+        r += toneAddR[li];
+        g += toneAddG[li];
+        b += toneAddB[li];
+        // Curves are 0..255 byte tables, so they double as the final clamp
+        dst[i] = curveR[r <= 0 ? 0 : (r >= 255 ? 255 : r | 0)];
+        dst[i + 1] = curveG[g <= 0 ? 0 : (g >= 255 ? 255 : g | 0)];
+        dst[i + 2] = curveB[b <= 0 ? 0 : (b >= 255 ? 255 : b | 0)];
+        dst[i + 3] = srcData[i + 3];
+        continue;
       }
 
       dst[i] = Math.min(255, Math.max(0, r));
