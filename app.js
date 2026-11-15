@@ -365,11 +365,12 @@
       sepia: 8, vignette: 5, fade: 18,
       cyan: 8, magenta: 15, yellow: 5, key: -3,
     },
+    // Toned down to 75% of the original look; at full strength it was too heavy.
     hongKongNoir: {
-      grainIntensity: 40, grainSize: 2, blendMode: 'multiply',
-      brightness: -10, contrast: 28, saturation: -18, temperature: 8,
-      sepia: 10, vignette: 38, fade: 4,
-      cyan: -8, magenta: -5, yellow: 12, key: 12,
+      grainIntensity: 38, grainSize: 2, blendMode: 'multiply',
+      brightness: -8, contrast: 21, saturation: -14, temperature: 6,
+      sepia: 8, vignette: 29, fade: 3,
+      cyan: -6, magenta: -4, yellow: 9, key: 9,
     },
     californiaSun: {
       grainIntensity: 20, grainSize: 1, blendMode: 'screen',
@@ -389,11 +390,12 @@
       sepia: 18, vignette: 12, fade: 20,
       cyan: -4, magenta: 4, yellow: 8, key: 0,
     },
+    // Toned down to 75% of the original look; at full strength it was too heavy.
     midnightBlue: {
-      grainIntensity: 28, grainSize: 1, blendMode: 'overlay',
-      brightness: -8, contrast: 18, saturation: -30, temperature: -25,
-      sepia: 0, vignette: 28, fade: 8,
-      cyan: 18, magenta: -5, yellow: -12, key: 8,
+      grainIntensity: 29, grainSize: 1, blendMode: 'overlay',
+      brightness: -6, contrast: 14, saturation: -23, temperature: -19,
+      sepia: 0, vignette: 21, fade: 6,
+      cyan: 14, magenta: -4, yellow: -9, key: 6,
     },
   };
 
