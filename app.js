@@ -885,16 +885,15 @@
       wrapper.addEventListener('click', (event) => {
         const button = event.target.closest('.slider-stepper-button');
         if (!button || button.disabled) return;
-        const isGrainControl = slider.id === 'grainIntensity' || slider.id === 'grainSize';
-        const step = Number(slider.dataset.stepperStep || (isGrainControl ? slider.step : 10)) || 1;
-        const delta = button.dataset.direction === 'decrease' ? -step : step;
+        // 화살표 한 번 = 정해진 눈금 한 칸. 그레인 크기는 슬라이더 자체 단위(1), 그 외는 data-stepper-step 또는 10.
+        const step = Number(slider.dataset.stepperStep || (slider.id === 'grainSize' ? slider.step : 10)) || 1;
+        const isDecrease = button.dataset.direction === 'decrease';
         const currentValue = Number(slider.value);
+        // 눈금 위에 있으면 한 칸 이동, 눈금 사이에 있으면 그 방향의 가장 가까운 눈금으로 이동 (모든 슬라이더 공통)
         const isOnStep = Number.isInteger(currentValue / step);
-        const steppedValue = isGrainControl
-          ? currentValue + delta
-          : button.dataset.direction === 'decrease'
-            ? (isOnStep ? currentValue - step : Math.floor(currentValue / step) * step)
-            : (isOnStep ? currentValue + step : Math.ceil(currentValue / step) * step);
+        const steppedValue = isDecrease
+          ? (isOnStep ? currentValue - step : Math.floor(currentValue / step) * step)
+          : (isOnStep ? currentValue + step : Math.ceil(currentValue / step) * step);
         const nextValue = Math.min(Number(slider.max), Math.max(Number(slider.min), steppedValue));
         if (nextValue === Number(slider.value)) return;
         slider.value = String(nextValue);
