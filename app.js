@@ -1131,8 +1131,13 @@
     if (!preset) return;
 
     saveSnapshot('light'); // Preset change is light
+    // 되돌아갈 기준(=프리셋 적용 전 상태)은 프리셋이 없을 때만 새로 잡는다.
+    // 프리셋 A → B로 바꿀 때 지금 화면(A가 적용된 상태)을 기준으로 잡으면,
+    // "없음"이나 강도 0%가 원본이 아닌 A로 돌아가 버린다.
+    if (!activePresetId || !presetBaseSettings) {
+      presetBaseSettings = getEditorSettings();
+    }
     activePresetId = btn.dataset.preset;
-    presetBaseSettings = getEditorSettings();
     presetStrength.value = '100';
     applyPresetStrength();
   });
