@@ -1117,6 +1117,18 @@ body.light-mode .theme-toggle .sun { display: block; }
   margin-bottom: 6px;
 }
 
+/* ===== Resume previous work ===== */
+.resume-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.resume-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* ===== Modal ===== */
 .modal-overlay {
   position: fixed;

@@ -53,6 +53,22 @@
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
     </div>
 
+    <!-- Resume previous work (shown on open when the last edit was 1–24 hours ago) -->
+    <div id="resumeModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resumeTitle">
+      <div class="modal resume-modal">
+        <div class="modal-header">
+          <h3 id="resumeTitle">이전 작업이 있어요</h3>
+        </div>
+        <div class="modal-body">
+          <p class="resume-info" id="resumeInfo"></p>
+        </div>
+        <div class="modal-footer resume-actions">
+          <button type="button" id="btnResumeContinue" class="btn btn-primary btn-full">이어하기</button>
+          <button type="button" id="btnResumeNew" class="btn btn-ghost btn-full">새로 시작</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Editor (shown when image loaded) -->
     <div id="editor" class="editor hidden">
       <div class="editor-layout">

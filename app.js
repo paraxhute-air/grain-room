@@ -362,6 +362,40 @@
     return dbRequest('readonly', (store) => store.getAll());
   }
 
+  function clearPersistedImages() {
+    return dbRequest('readwrite', (store) => store.clear());
+  }
+
+  // Saved work by time since the last edit: up to 1 hour reopens silently,
+  // 1–24 hours asks first, 24 hours or more is deleted automatically.
+  const RESUME_SILENT_MS = 60 * 60 * 1000;
+  const RESUME_EXPIRE_MS = 24 * 60 * 60 * 1000;
+
+  function formatTimeAgo(ms) {
+    const minutes = Math.max(1, Math.round(ms / 60000));
+    if (minutes < 60) return `${minutes}분 전`;
+    return `${Math.floor(minutes / 60)}시간 전`;
+  }
+
+  // Resolves true to continue the previous work, false to start fresh.
+  function askResumePreviousWork(count, ageMs) {
+    const modal = document.getElementById('resumeModal');
+    if (!modal) return Promise.resolve(true);
+    document.getElementById('resumeInfo').textContent = `사진 ${count}장 · 마지막 작업 ${formatTimeAgo(ageMs)}`;
+    modal.classList.remove('hidden');
+    return new Promise((resolve) => {
+      const finish = (resume) => {
+        modal.classList.add('hidden');
+        document.removeEventListener('keydown', onKey);
+        resolve(resume);
+      };
+      const onKey = (e) => { if (e.key === 'Escape') finish(true); }; // closing never deletes
+      document.getElementById('btnResumeContinue').onclick = () => finish(true);
+      document.getElementById('btnResumeNew').onclick = () => finish(false);
+      document.addEventListener('keydown', onKey);
+    });
+  }
+
   // ===== Presets =====
   const PRESETS = {
     golden200: {
@@ -695,6 +729,20 @@
         .slice(0, MAX_IMAGE_COUNT);
 
       if (restoredRecords.length === 0) return;
+
+      const lastEditedAt = Math.max(...records.map((record) => record.updatedAt || 0));
+      const ageMs = Date.now() - lastEditedAt;
+      if (ageMs >= RESUME_EXPIRE_MS) {
+        await clearPersistedImages();
+        return;
+      }
+      if (ageMs > RESUME_SILENT_MS) {
+        const resume = await askResumePreviousWork(restoredRecords.length, ageMs);
+        if (!resume) {
+          await clearPersistedImages();
+          return;
+        }
+      }
 
       const restoredImages = [];
       for (const record of restoredRecords) {
