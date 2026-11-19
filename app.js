@@ -759,7 +759,7 @@
       if (mobileNav) mobileNav.classList.remove('hidden');
       renderGallery();
       switchImage(0);
-      showToast(`${restoredImages.length}개의 저장된 이미지를 복원했습니다.`);
+      showToast(`${restoredImages.length}개의 저장된 이미지를\n복원했습니다.`);
     } catch (error) {
       console.warn('저장된 작업을 복원하지 못했습니다.', error);
     }
