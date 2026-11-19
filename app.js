@@ -2936,9 +2936,21 @@
 
       ctx.translate(x, y);
       const isVertical = overlayData.noteDir === 'vertical';
+      const isManualNote = overlayData.noteX !== null && overlayData.noteY !== null;
+      let noteAngle = 0;
       if (isVertical) {
-        ctx.rotate(Math.PI / 2);
-        // Recalculate alignment for vertical if needed, but for manual center/middle it's fine
+        // 날짜스탬프와 같은 규칙: 왼쪽은 위→아래(+90°), 오른쪽은 아래→위(-90°)로 읽히고,
+        // 모서리마다 글자가 사진 안쪽으로 뻗도록 정렬한다. (직접 옮긴 노트는 가운데 기준 +90°)
+        const pos = overlayData.notePos;
+        const isRightSide = !isManualNote && (pos === 'top-right' || pos === 'bottom-right');
+        noteAngle = isRightSide ? -Math.PI / 2 : Math.PI / 2;
+        if (!isManualNote) {
+          if (pos === 'top-left') { textAlign = 'left'; textBaseline = 'bottom'; }
+          else if (pos === 'bottom-left') { textAlign = 'right'; textBaseline = 'bottom'; }
+          else if (pos === 'top-right') { textAlign = 'right'; textBaseline = 'bottom'; }
+          else { textAlign = 'left'; textBaseline = 'bottom'; }
+        }
+        ctx.rotate(noteAngle);
       }
 
       // Ensure font is ready before setting to avoid flickering fallback
@@ -2970,12 +2982,19 @@
       if (textBaseline === 'bottom') by = -noteH;
       else if (textBaseline === 'middle') by = -noteH / 2;
 
-      const fullBox = {
-        x: x + (isVertical ? 0 : bx) - (isVertical ? hitPadY : hitPadX),
-        y: y + (isVertical ? bx : by) - (isVertical ? hitPadX : hitPadY),
-        w: (isVertical ? noteH + hitPadY * 2 : noteW + hitPadX * 2),
-        h: (isVertical ? noteW + hitPadX * 2 : noteH + hitPadY * 2)
+      // Screen-space (canvas pixel) box of a local rect, accounting for the rotation
+      const cosA = Math.round(Math.cos(noteAngle));
+      const sinA = Math.round(Math.sin(noteAngle));
+      const toScreenBox = (lx0, ly0, lx1, ly1) => {
+        const xs = [], ys = [];
+        [[lx0, ly0], [lx1, ly0], [lx0, ly1], [lx1, ly1]].forEach(([lx, ly]) => {
+          xs.push(x + cosA * lx - sinA * ly);
+          ys.push(y + sinA * lx + cosA * ly);
+        });
+        const minX = Math.min(...xs), minY = Math.min(...ys);
+        return { x: minX, y: minY, w: Math.max(...xs) - minX, h: Math.max(...ys) - minY };
       };
+      const fullBox = toScreenBox(bx - hitPadX, by - hitPadY, bx + noteW + hitPadX, by + noteH + hitPadY);
       
       // Actually, it's easier to keep the bounding box in local translated coordinates for some parts
       // but we need absolute for mouse hit testing. Let's store absolute.
@@ -3005,10 +3024,15 @@
         ctx.strokeRect(bx - padX, by - padY, noteW + padX * 2, noteH + padY * 2);
         ctx.setLineDash([]);
         
-        // Resize Handle (Bottom Right)
+        // Resize Handle at the on-screen bottom-right corner (where the hit test looks for it)
         const hSize = 8 * scale;
+        const visualBox = toScreenBox(bx - padX, by - padY, bx + noteW + padX, by + noteH + padY);
+        ctx.save();
+        ctx.rotate(-noteAngle);
+        ctx.translate(-x, -y);
         ctx.fillStyle = '#ef4444';
-        ctx.fillRect(bx + noteW + padX - hSize/2, by + noteH + padY - hSize/2, hSize, hSize);
+        ctx.fillRect(visualBox.x + visualBox.w - hSize / 2, visualBox.y + visualBox.h - hSize / 2, hSize, hSize);
+        ctx.restore();
       }
 
       ctx.restore();
