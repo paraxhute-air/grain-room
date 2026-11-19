@@ -759,7 +759,7 @@
       if (mobileNav) mobileNav.classList.remove('hidden');
       renderGallery();
       switchImage(0);
-      showToast(`${restoredImages.length}개의 저장된 이미지를 복원했습니다.`);
+      showToast(`${restoredImages.length}개의 저장된 이미지를 복원했습니다.`, 2000);
     } catch (error) {
       console.warn('저장된 작업을 복원하지 못했습니다.', error);
     }
@@ -3425,9 +3425,27 @@
   });
 
   // ===== Helper: Show Custom Toast =====
-  function showToast(message) {
+  let toastTimer = null;
+  let toastHideTimer = null;
+
+  function hideToast() {
     const toast = document.getElementById('toast');
     if (!toast) return;
+    clearTimeout(toastTimer);
+    toast.classList.remove('show');
+    clearTimeout(toastHideTimer);
+    toastHideTimer = setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 300);
+  }
+
+  function showToast(message, duration = 3000) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    // A newer message restarts the timer (an older one no longer hides it early)
+    clearTimeout(toastTimer);
+    clearTimeout(toastHideTimer);
 
     toast.textContent = message;
     toast.classList.remove('hidden');
@@ -3437,14 +3455,14 @@
     
     toast.classList.add('show');
 
-    // Auto hide after 3 seconds
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => {
-        toast.classList.add('hidden');
-      }, 300);
-    }, 3000);
+    toastTimer = setTimeout(hideToast, duration);
   }
+
+  // Touching anywhere dismisses the message (the tap still does its normal job)
+  document.addEventListener('pointerdown', () => {
+    const toast = document.getElementById('toast');
+    if (toast && toast.classList.contains('show')) hideToast();
+  }, true);
 
   // ===== Mobile Navigation & Bottom Sheet =====
   function initMobileNav() {
