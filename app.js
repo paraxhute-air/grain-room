@@ -249,6 +249,9 @@
   }
   currentTone = { ...DEFAULT_TONE };
 
+  // Note text filled in when the note is turned on with an empty field
+  const DEFAULT_NOTE_TEXT = 'Grain Room.';
+
   const DEFAULT_SETTINGS = {
     grainIntensity: 30, grainSize: 2, blendMode: 'overlay',
     brightness: 0, contrast: 0, saturation: 0, temperature: 0,
@@ -1549,6 +1552,13 @@
   noteEnable.addEventListener('change', () => {
     saveSnapshot('light');
     textOverlay.noteEnable = noteEnable.checked;
+
+    // If enabled and empty, start with the brand signature (kept at its preset position)
+    if (noteEnable.checked && !textNote.value) {
+      textNote.value = DEFAULT_NOTE_TEXT;
+      textOverlay.note = DEFAULT_NOTE_TEXT;
+    }
+
     saveCurrentSettings();
     scheduleApply();
   });
