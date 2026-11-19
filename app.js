@@ -216,16 +216,27 @@
   }
 
   // Preload fonts for canvas rendering
+  // (exact weights/styles the canvas uses: date film A = italic Digital-7, film B = bold Doto)
   const preloadFonts = [
+    "italic 400 20px 'Digital-7 Mono'",
     "400 20px 'Digital-7 Mono'",
+    "700 20px 'Doto'",
     "400 20px 'Gamja Flower'",
     "400 20px 'Nanum Myeongjo'",
     "400 20px 'Noto Sans KR'"
   ];
   preloadFonts.forEach(f => document.fonts.load(f).catch(() => {}));
 
+  // Canvas text drawn before its web font arrives uses a fallback and is not redrawn
+  // automatically, so redraw once whenever fonts finish loading.
+  if (document.fonts && document.fonts.addEventListener) {
+    document.fonts.addEventListener('loadingdone', () => {
+      if (typeof scheduleApply === 'function') scheduleApply();
+    });
+  }
+
   // Ensure Note input also has a default font set early
-  if (textNote) textNote.style.fontFamily = "'Nanum Pen Script', sans-serif";
+  if (textNote) textNote.style.fontFamily = "'Nanum Myeongjo', serif";
 
   // Default settings for a new image
   // Film tone controls used only by presets (no sliders): split toning by
@@ -760,7 +771,7 @@
       // Reset global textOverlay state to default
       textOverlay = { 
           date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ff8400', dateStyle: 'retro1',
-          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Myeongjo',
           noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
       };
       return;
@@ -789,7 +800,7 @@
     } else {
          textOverlay = { 
           date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ff8400', dateStyle: 'retro1',
-          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Myeongjo',
           noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
         };
     }
@@ -851,7 +862,7 @@
         // Reset text overlay if none exists
         textOverlay = {
             date: getDefaultDateText('retro1'), datePos: 'bottom-right', dateDir: 'horizontal', dateColor: getDefaultDateColor('retro1'), dateStyle: 'retro1',
-            note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+            note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Myeongjo',
             noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
         };
     }
@@ -1417,7 +1428,7 @@
 
     textOverlay = {
       date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ff8400', dateStyle: 'retro1',
-      note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+      note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Myeongjo',
       noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
     };
   }
@@ -2370,7 +2381,7 @@
         // Determine Settings & Text Overlay
         const tOverlay = currentIndex === i ? textOverlay : (imgData.textOverlay || {
                 date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
-                note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+                note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Myeongjo',
                 noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false
         });
         const exportOverlay = { ...tOverlay, showEditorUI: false };
@@ -2434,7 +2445,7 @@
     // If imgData.textOverlay is missing, we should use default or empty.
     const tOverlay = currentIndex === index ? textOverlay : (imgData.textOverlay || {
             date: '', datePos: 'bottom-right', dateDir: 'horizontal', dateColor: '#ffffff',
-          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Pen Script',
+          note: '', notePos: 'bottom-left', noteDir: 'horizontal', noteStyle: 'white', noteFont: 'Nanum Myeongjo',
           noteX: null, noteY: null, noteScale: 1.0, showEditorUI: false, dateEnable: false, noteEnable: false
     });
     
@@ -3267,6 +3278,12 @@
       updateGlobalDateSetting('dateColor', defaultColor);
       
       syncSidebarUI();
+
+      // Redraw again once this style's font is actually available
+      const dateFontSpec = newStyle === 'retro2' ? "700 20px 'Doto'"
+        : newStyle === 'retro3' ? "400 20px 'Noto Sans KR'"
+        : "italic 400 20px 'Digital-7 Mono'";
+      document.fonts.load(dateFontSpec).then(() => scheduleApply()).catch(() => {});
     });
   });
 
